@@ -3,8 +3,12 @@
     "version": "1.0.0",
     "description": "",
     "main": "src/app.ts",
-    "dependencies": {},
+    "dependencies": {
+        "body-parser": "^1.19.0",
+        "express": "^4.17.1"
+    },
     "devDependencies": {
+        "@types/express": "^4.17.1",
         "@types/node": "^12.7.8",
         "eslint": "^6.4.0",
         "eslint-plugin-import": "^2.18.2",
@@ -17,7 +21,7 @@
     },
     "scripts": {
         "start": "node --inspect=5858 -r ts-node/register ./src/app.ts",
-        "start:watch": "nodemon",
+        "watch": "nodemon",
         "build": "tsc"
     },
     "repository": {
