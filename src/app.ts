@@ -30,6 +30,8 @@ async function app() {
                     httpOnly: true,
                     signed: true,
                 },
+                resave: false,
+                saveUninitialized: true,
             })
         )
         .use((req, res, next) => {
