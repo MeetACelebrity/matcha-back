@@ -1,9 +1,5 @@
 import { Router } from 'express';
-import {
-    Validator,
-    ValidatorObject,
-    InvalidValueErrors,
-} from '../utils/validator';
+import { Validator, ValidatorObject } from '../utils/validator';
 import { createUser } from '../models/user';
 
 const enum SignUpStatusCode {
@@ -52,7 +48,7 @@ export default function AuthRoutes(): Router {
                     error: { concernedKey },
                 } = validationResult;
 
-                res.sendStatus(400);
+                res.status(400);
 
                 let statusCode: SignUpStatusCode;
 
@@ -85,7 +81,7 @@ export default function AuthRoutes(): Router {
 
             const result = await createUser({ db: res.locals.db, ...req.body });
             if (result === null) {
-                res.sendStatus(500);
+                res.status(500);
 
                 res.json({
                     statusCode: SignUpStatusCode.USERNAME_INCORRECT,
