@@ -139,7 +139,7 @@ export class Validator {
 
             console.log('result', result);
 
-            if (result === true) return true;
+            if (result) return true;
             return false;
         } catch (e) {
             return { error: e };
@@ -154,9 +154,9 @@ export class ValidatorPrimitive {
 
     protected modifiers: Modifier[] = [];
 
-    constructor(Types: Types) {
-        this[VALIDATOR] = Types;
-        this.types = Types;
+    constructor(types: Types) {
+        this[VALIDATOR] = types;
+        this.types = types;
     }
 
     valid(value: any): boolean {
@@ -250,7 +250,7 @@ export class ValidatorString extends ValidatorPrimitive {
     uppercase(enabled = true) {
         if ((this.constraints & Constraints.UPPERCASE) !== 0) return this;
 
-        if (enabled === true) {
+        if (enabled) {
             this.modifiers.push((obj, key) => {
                 obj[key] = (obj[key] as string).toUpperCase();
             });
@@ -264,7 +264,7 @@ export class ValidatorString extends ValidatorPrimitive {
     lowercase(enabled = true) {
         if ((this.constraints & Constraints.LOWERCASE) !== 0) return this;
 
-        if (enabled === true) {
+        if (enabled) {
             this.modifiers.push((obj, key) => {
                 obj[key] = (obj[key] as string).toLowerCase();
             });
@@ -278,7 +278,7 @@ export class ValidatorString extends ValidatorPrimitive {
     trim(enabled = true) {
         if ((this.constraints & Constraints.TRIM) !== 0) return this;
 
-        if (enabled === true) {
+        if (enabled) {
             this.modifiers.push((obj, key) => {
                 obj[key] = (obj[key] as string).trim();
             });
@@ -290,7 +290,7 @@ export class ValidatorString extends ValidatorPrimitive {
     }
 
     valid(value: string): boolean {
-        if (super.valid(value) === false) return false;
+        if (!super.valid(value)) return false;
 
         if (
             (this.constraints & Constraints.MIN) !== 0 &&
@@ -307,14 +307,14 @@ export class ValidatorString extends ValidatorPrimitive {
 
         if (
             (this.constraints & Constraints.EMAIL) !== 0 &&
-            this.emailRegex.test(value) === false
+            !this.emailRegex.test(value)
         ) {
             throw new ValidatorError(InvalidValueErrors.INVALID_EMAIL);
         }
 
         if (
             (this.constraints & Constraints.ALPHANUM) !== 0 &&
-            this.alphanumRegex.test(value) === false
+            !this.alphanumRegex.test(value)
         ) {
             throw new ValidatorError(InvalidValueErrors.NOT_ALPHANUM);
         }
@@ -393,7 +393,7 @@ export class ValidatorNumber extends ValidatorPrimitive {
     }
 
     valid(value: number): boolean {
-        if (super.valid(value) === false) return false;
+        if (!super.valid(value)) return false;
 
         if (
             (this.constraints & Constraints.INTEGER) !== 0 &&
@@ -444,7 +444,7 @@ export class ValidatorObject {
 
     keys(keys: ValidatorClassesObject): ValidatorObject {
         const [incorrectKey, result] = this.keysValid(keys);
-        if (result === false) {
+        if (!result) {
             throw new Error(`The key ${incorrectKey} is incorrect !`);
         }
 
@@ -474,7 +474,7 @@ export class ValidatorObject {
                 schemaValue.applyModifications(obj, key);
             }
 
-            index--;
+            index -= 1;
         }
 
         return index === 0;
@@ -510,7 +510,7 @@ export class ValidatorAlternative {
     one(value: any): boolean {
         for (const schema of this.schemas) {
             try {
-                if (schema.valid(value) === true) return true;
+                if (schema.valid(value)) return true;
             } catch (e) {
                 continue;
             }
@@ -522,7 +522,7 @@ export class ValidatorAlternative {
     all(value: any): boolean {
         for (const schema of this.schemas) {
             try {
-                if (schema.valid(value) === true) continue;
+                if (schema.valid(value)) continue;
             } catch (e) {
                 return false;
             }

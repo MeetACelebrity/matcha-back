@@ -23,8 +23,8 @@
         "nodemon": "^1.19.2",
         "ts-node": "^8.4.1",
         "tslint": "^5.20.0",
+        "tslint-config-airbnb": "^5.11.2",
         "tslint-config-prettier": "^1.18.0",
-        "tslint-config-standard": "^8.0.1",
         "typescript": "^3.6.3"
     },
     "scripts": {
@@ -33,7 +33,7 @@
         "prebuild": "docker build . -t 'db'",
         "build": "tsc",
         "setup:database": "docker rm -f database ; docker run -d -p 35432:5432 --name database db",
-        "lint": "tslint --project tsconfig.json --config tslint.json 'src/**/*.ts'"
+        "lint": "tslint --fix --project tsconfig.json -t codeFrame 'src/**/*.ts'"
     },
     "repository": {
         "type": "git",
@@ -52,6 +52,7 @@
     },
     "husky": {
         "hooks": {
+            "pre-commit": "npm run lint",
             "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true"
         }
     }

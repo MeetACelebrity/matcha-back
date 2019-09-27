@@ -17,12 +17,12 @@ const enum SignUpStatusCode {
     UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
-export default function AuthRoutes(): Router {
+export default function authRoutes(): Router {
     const stringSchema = Validator.string()
         .min(3)
         .max(20);
 
-    const SignUpSchema: ValidatorObject = Validator.object().keys({
+    const signUpSchema: ValidatorObject = Validator.object().keys({
         email: Validator.string().email(),
         username: stringSchema,
         givenName: stringSchema,
@@ -32,7 +32,7 @@ export default function AuthRoutes(): Router {
 
     const router = Router();
 
-    router.get('/sign-in', (_req, res) => {
+    router.get('/sign-in', (req, res) => {
         console.log('res.locals =', res.locals);
 
         res.send('SignIn');
@@ -41,7 +41,7 @@ export default function AuthRoutes(): Router {
     router.post('/sign-up', async (req, res) => {
         console.log(req.body);
         try {
-            const validationResult = Validator.validate(SignUpSchema, req.body);
+            const validationResult = Validator.validate(signUpSchema, req.body);
 
             if (typeof validationResult !== 'boolean') {
                 const {

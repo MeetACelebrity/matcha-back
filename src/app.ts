@@ -16,7 +16,7 @@ async function app() {
     server
         .use(bodyParser.urlencoded({ extended: false }))
         .use(bodyParser.json())
-        .use((_req, res, next) => {
+        .use((req, res, next) => {
             const context: Context = {
                 db,
             };

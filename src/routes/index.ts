@@ -2,6 +2,6 @@ import { Express } from 'express';
 
 import AuthRoutes from './auth';
 
-export default function Routes(server: Express) {
+export default function routes(server: Express) {
     server.use('/auth', AuthRoutes());
 }
