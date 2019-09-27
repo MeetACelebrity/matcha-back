@@ -2,13 +2,28 @@ import express from 'express';
 import bodyParser from 'body-parser';
 
 import Routes from './routes';
+import { Database } from './database';
+
+interface Context {
+    db: Database;
+}
 
 async function app() {
     const server = express();
 
+    const db = new Database();
+
     server
         .use(bodyParser.urlencoded({ extended: false }))
-        .use(bodyParser.json());
+        .use(bodyParser.json())
+        .use((_req, res, next) => {
+            const context: Context = {
+                db,
+            };
+
+            res.locals = context;
+            next();
+        });
 
     Routes(server);
 
