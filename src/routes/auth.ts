@@ -1,29 +1,25 @@
 import { Router } from 'express';
-import { Validator, ValidatorObject } from '../utils/validator';
+import {
+    Validator,
+    ValidatorObject,
+    InvalidValueErrors,
+} from '../utils/validator';
 import { createUser } from '../models/user';
 
-enum SignUpStatusCode {
+const enum SignUpStatusCode {
     /**
      * The provided username is incorrect, go fuck yourself
      */
     DONE = 'DONE',
 
+    EMAIL_INCORRECT = 'EMAIL_INCORRECT',
     USERNAME_INCORRECT = 'USERNAME_INCORRECT',
-    TEST_INCORRECT = 'TEST_INCORRECT',
+    GIVEN_NAME_INCORRECT = 'GIVEN_NAME_INCORRECT',
+    FAMILY_NAME_INCORRECT = 'FAMILY_NAME_INCORRECT',
     PASSWORD_INCORRECT = 'PASSWORD_INCORRECT',
-}
 
-type SignUpResponse =
-    | {
-          statusCode:
-              | SignUpStatusCode.USERNAME_INCORRECT
-              | SignUpStatusCode.TEST_INCORRECT
-              | SignUpStatusCode.DONE;
-      }
-    | {
-          statusCode: SignUpStatusCode.PASSWORD_INCORRECT;
-          payload: string;
-      };
+    UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+}
 
 export default function AuthRoutes(): Router {
     const stringSchema = Validator.string()
@@ -53,36 +49,54 @@ export default function AuthRoutes(): Router {
 
             if (typeof validationResult !== 'boolean') {
                 const {
-                    error: { error, concernedKey },
+                    error: { concernedKey },
                 } = validationResult;
 
-                console.error('the schema is not correct', concernedKey, error);
                 res.sendStatus(400);
 
-                const response: SignUpResponse = {
-                    statusCode: SignUpStatusCode.USERNAME_INCORRECT,
-                };
-                res.json(response);
+                let statusCode: SignUpStatusCode;
+
+                switch (concernedKey) {
+                    case 'email':
+                        statusCode = SignUpStatusCode.EMAIL_INCORRECT;
+                        break;
+                    case 'username':
+                        statusCode = SignUpStatusCode.USERNAME_INCORRECT;
+                        break;
+                    case 'givenName':
+                        statusCode = SignUpStatusCode.GIVEN_NAME_INCORRECT;
+                        break;
+                    case 'familyName':
+                        statusCode = SignUpStatusCode.FAMILY_NAME_INCORRECT;
+                        break;
+                    case 'password':
+                        statusCode = SignUpStatusCode.PASSWORD_INCORRECT;
+                        break;
+                    default:
+                        statusCode = SignUpStatusCode.UNKNOWN_ERROR;
+                }
+
+                res.json({
+                    statusCode,
+                });
 
                 return;
             }
+
             const result = await createUser({ db: res.locals.db, ...req.body });
             if (result === null) {
-                console.error('error in createUser');
                 res.sendStatus(500);
 
-                const response: SignUpResponse = {
+                res.json({
                     statusCode: SignUpStatusCode.USERNAME_INCORRECT,
-                };
-                res.json(response);
+                });
 
                 return;
             }
 
-            const response: SignUpResponse = {
+            res.json({
                 statusCode: SignUpStatusCode.DONE,
-            };
-            res.json(response);
+            });
         } catch (e) {
             console.error(e);
         }
