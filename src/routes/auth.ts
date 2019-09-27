@@ -23,13 +23,14 @@ export default function AuthRoutes(): Router {
     });
 
     router.post('/sign-up', req => {
-        if (Validator.validate(SignUpSchema, req.body) === false)
+        if (Validator.validate(SignUpSchema, req.body) === false) {
             console.error('the schema is not correct');
+        }
 
-        //check info
+        // check info
         // email, username, givenName, familyName, password
 
-        //write info
+        // write info
         // call to createUser()
     });
 

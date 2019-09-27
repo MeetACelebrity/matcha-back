@@ -109,8 +109,10 @@ export class ValidatorPrimitive {
                 if ((this.types & Types.UNDEFINED) === 0) return false;
                 break;
             case 'object':
-                if ((this.types & Types.NULL) !== 0 && value === null)
+                if ((this.types & Types.NULL) !== 0 && value === null) {
                     return true;
+                }
+                return false;
             default:
                 return false;
         }
@@ -218,43 +220,50 @@ export class ValidatorString extends ValidatorPrimitive {
         if (
             (this.constraints & Constraints.MIN) !== 0 &&
             value.length < this.minLength
-        )
+        ) {
             return false;
+        }
         if (
             (this.constraints & Constraints.MAX) !== 0 &&
             value.length >= this.maxLength
-        )
+        ) {
             return false;
+        }
 
         if (
             (this.constraints & Constraints.EMAIL) !== 0 &&
             this.emailRegex.test(value) === false
-        )
+        ) {
             return false;
+        }
 
         if (
             (this.constraints & Constraints.ALPHANUM) !== 0 &&
             this.alphanumRegex.test(value) === false
-        )
+        ) {
             return false;
+        }
 
         if (
             (this.constraints & Constraints.UPPERCASE) !== 0 &&
             value !== value.toUpperCase()
-        )
+        ) {
             return false;
+        }
 
         if (
             (this.constraints & Constraints.LOWERCASE) !== 0 &&
             value !== value.toLowerCase()
-        )
+        ) {
             return false;
+        }
 
         if (
             (this.constraints & Constraints.TRIM) !== 0 &&
             value !== value.trim()
-        )
+        ) {
             return false;
+        }
 
         return true;
     }
@@ -286,23 +295,23 @@ export class ValidatorNumber extends ValidatorPrimitive {
         return this;
     }
 
-    less(number: number): ValidatorNumber {
-        return this.max(number);
+    less(num: number): ValidatorNumber {
+        return this.max(num);
     }
 
-    greater(number: number): ValidatorNumber {
-        return this.min(number);
+    greater(num: number): ValidatorNumber {
+        return this.min(num);
     }
 
-    max(number: number): ValidatorNumber {
-        this.maxNumber = number;
+    max(num: number): ValidatorNumber {
+        this.maxNumber = num;
         this.constraints |= Constraints.MAX;
 
         return this;
     }
 
-    min(number: number): ValidatorNumber {
-        this.minNumber = number;
+    min(num: number): ValidatorNumber {
+        this.minNumber = num;
         this.constraints |= Constraints.MIN;
 
         return this;
@@ -314,26 +323,31 @@ export class ValidatorNumber extends ValidatorPrimitive {
         if (
             (this.constraints & Constraints.INTEGER) !== 0 &&
             (value | 0) !== value
-        )
+        ) {
             return false;
+        }
 
         if (
             (this.constraints & Constraints.MAX) !== 0 &&
             value >= this.maxNumber
-        )
+        ) {
             return false;
+        }
 
         if (
             (this.constraints & Constraints.MIN) !== 0 &&
             value < this.minNumber
-        )
+        ) {
             return false;
+        }
 
-        if ((this.constraints & Constraints.NEGATIVE) !== 0 && value > 0)
+        if ((this.constraints & Constraints.NEGATIVE) !== 0 && value > 0) {
             return false;
+        }
 
-        if ((this.constraints & Constraints.POSITIVE) !== 0 && value <= 0)
+        if ((this.constraints & Constraints.POSITIVE) !== 0 && value <= 0) {
             return false;
+        }
 
         return true;
     }
@@ -345,8 +359,9 @@ export class ValidatorObject {
 
     private keysValid(keys: ValidatorClassesObject): [string | null, boolean] {
         for (const [key, value] of Object.entries(keys)) {
-            if (!(typeof keys === 'object' && value[VALIDATOR] > 0))
+            if (!(value[VALIDATOR] > 0)) {
                 return [key, false];
+            }
         }
 
         return [null, true];
@@ -354,8 +369,9 @@ export class ValidatorObject {
 
     keys(keys: ValidatorClassesObject): ValidatorObject {
         const [incorrectKey, result] = this.keysValid(keys);
-        if (result === false)
+        if (result === false) {
             throw new Error(`The key ${incorrectKey} is incorrect !`);
+        }
 
         this.innerObject = keys;
 
@@ -369,20 +385,15 @@ export class ValidatorObject {
         for (const [key, value] of Object.entries(obj)) {
             const schemaValue = this.innerObject[key];
 
-            if (
-                !(
-                    typeof schemaValue === 'object' &&
-                    schemaValue[VALIDATOR] > 0 &&
-                    typeof schemaValue.valid === 'function'
-                )
-            ) {
+            if (!(schemaValue[VALIDATOR] > 0)) {
                 return false;
             }
 
             if (!schemaValue.valid(value)) return false;
 
-            if (schemaValue instanceof ValidatorPrimitive)
+            if (schemaValue instanceof ValidatorPrimitive) {
                 schemaValue.applyModifications(obj, key);
+            }
 
             index--;
         }
@@ -402,8 +413,9 @@ export class ValidatorArray {
     }
 
     valid(array: any[]): boolean {
-        if (array.some(trueValue => !this.innerArray.includes(trueValue)))
+        if (array.some(trueValue => !this.innerArray.includes(trueValue))) {
             return false;
+        }
 
         return true;
     }
