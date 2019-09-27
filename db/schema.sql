@@ -22,10 +22,10 @@ CREATE TABLE "users" (
   "uuid" uuid UNIQUE NOT NULL,
   "given_name" text NOT NULL,
   "family_name" text NOT NULL,
-  "username" text NOT NULL,
-  "email" text NOT NULL,
+  "username" text UNIQUE NOT NULL,
+  "email" text UNIQUE NOT NULL,
   "password" text NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  "created_at" timestampz NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   "extended_profile" int,
   "confirmed" bool NOT NULL DEFAULT false
 );
@@ -33,7 +33,7 @@ CREATE TABLE "users" (
 CREATE TABLE "geolocalisations" (
   "point" point NOT NULL,
   "user_id" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestampz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "extended_profiles" (
@@ -61,20 +61,20 @@ CREATE TABLE "tokens" (
   "id" serial PRIMARY KEY,
   "token" uuid UNIQUE NOT NULL,
   "user_id" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestampz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "likes" (
   "liker" int NOT NULL,
   "liked" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestampz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "visits" (
   "id" serial PRIMARY KEY,
   "visitor" int NOT NULL,
   "visited" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestampz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "messages" (
@@ -88,7 +88,7 @@ CREATE TABLE "messages" (
 CREATE TABLE "conversations" (
   "id" serial PRIMARY KEY,
   "uuid" uuid UNIQUE NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestampz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "conversations_users" (
