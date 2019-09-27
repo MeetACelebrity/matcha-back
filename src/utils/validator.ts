@@ -26,6 +26,61 @@ const enum Constraints {
     POSITIVE = 1 << 9,
 }
 
+export enum InvalidValueErrors {
+    NONE = 'NONE',
+
+    NOT_A_STRING = 'NOT_A_STRING',
+    NOT_A_NUMBER = 'NOT_A_NUMBER',
+    NOT_A_BOOLEAN = 'NOT_A_BOOLEAN',
+    NOT_UNDEFINED = 'NOT_UNDEFINED',
+    NOT_NULL = 'NOT_NULL',
+    NOT_AN_OBJECT = 'NOT_AN_OBJECT',
+    NOT_AN_ARRAY = 'NOT_AN_ARRAY',
+
+    INVALID_MIN = 'INVALID_MIN',
+    INVALID_MAX = 'INVALID_MAX',
+    INVALID_EMAIL = 'INVALID_EMAIL',
+
+    NOT_ALPHANUM = 'NOT_ALPHANUM',
+    NOT_UPPERCASE = 'NOT_UPPERCASE',
+    NOT_LOWERCASE = 'NOT_LOWERCASE',
+    NOT_TRIM = 'NOT_TRIM',
+
+    NOT_AN_INTEGER = 'NOT_AN_INTEGER',
+    NOT_A_NEGATIVE_NUMBER = 'NOT_A_NEGATIVE_NUMBER',
+    NOT_A_POSITIVE_NUMBER = 'NOT_A_POSITIVE_NUMBER',
+}
+
+export class ValidatorError extends Error {
+    error: InvalidValueErrors;
+    concernedKey: string;
+
+    constructor(
+        message: string | InvalidValueErrors,
+        error: InvalidValueErrors = message as InvalidValueErrors,
+        concernedKey = ''
+    ) {
+        super(message);
+
+        this.error = error;
+        this.concernedKey = concernedKey;
+    }
+
+    static throw(error: ValidatorError | InvalidValueErrors, key?: string) {
+        if (error instanceof ValidatorError) {
+            const { message, concernedKey } = error;
+
+            return new ValidatorError(
+                `${key}: ${message}`,
+                error.error,
+                concernedKey === '' ? key : concernedKey
+            );
+        }
+
+        return new ValidatorError(error, error);
+    }
+}
+
 type ValidatorClasses = ValidatorPrimitive | ValidatorObject | ValidatorArray;
 
 interface Modifier {
@@ -75,8 +130,20 @@ export class Validator {
         return new ValidatorAlternative(schemas);
     }
 
-    static validate(schema: ValidatorClasses, value: any): boolean {
-        return schema.valid(value);
+    static validate(
+        schema: ValidatorClasses,
+        value: any
+    ): boolean | { error: ValidatorError } {
+        try {
+            const result = schema.valid(value);
+
+            console.log('result', result);
+
+            if (result === true) return true;
+            return false;
+        } catch (e) {
+            return { error: e };
+        }
     }
 }
 
@@ -97,22 +164,30 @@ export class ValidatorPrimitive {
 
         switch (typeValue) {
             case 'number':
-                if ((this.types & Types.NUMBER) === 0) return false;
+                if ((this.types & Types.NUMBER) === 0) {
+                    throw new ValidatorError(InvalidValueErrors.NOT_A_NUMBER);
+                }
                 break;
             case 'string':
-                if ((this.types & Types.STRING) === 0) return false;
+                if ((this.types & Types.STRING) === 0) {
+                    throw new ValidatorError(InvalidValueErrors.NOT_A_STRING);
+                }
                 break;
             case 'boolean':
-                if ((this.types & Types.BOOLEAN) === 0) return false;
+                if ((this.types & Types.BOOLEAN) === 0) {
+                    throw new ValidatorError(InvalidValueErrors.NOT_A_BOOLEAN);
+                }
                 break;
             case 'undefined':
-                if ((this.types & Types.UNDEFINED) === 0) return false;
+                if ((this.types & Types.UNDEFINED) === 0) {
+                    throw new ValidatorError(InvalidValueErrors.NOT_UNDEFINED);
+                }
                 break;
             case 'object':
-                if ((this.types & Types.NULL) !== 0 && value === null) {
-                    return true;
+                if (!((this.types & Types.NULL) !== 0 && value === null)) {
+                    throw new ValidatorError(InvalidValueErrors.NOT_AN_OBJECT);
                 }
-                return false;
+                break;
             default:
                 return false;
         }
@@ -221,48 +296,48 @@ export class ValidatorString extends ValidatorPrimitive {
             (this.constraints & Constraints.MIN) !== 0 &&
             value.length < this.minLength
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.INVALID_MIN);
         }
         if (
             (this.constraints & Constraints.MAX) !== 0 &&
             value.length >= this.maxLength
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.INVALID_MAX);
         }
 
         if (
             (this.constraints & Constraints.EMAIL) !== 0 &&
             this.emailRegex.test(value) === false
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.INVALID_EMAIL);
         }
 
         if (
             (this.constraints & Constraints.ALPHANUM) !== 0 &&
             this.alphanumRegex.test(value) === false
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.NOT_ALPHANUM);
         }
 
         if (
             (this.constraints & Constraints.UPPERCASE) !== 0 &&
             value !== value.toUpperCase()
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.NOT_UPPERCASE);
         }
 
         if (
             (this.constraints & Constraints.LOWERCASE) !== 0 &&
             value !== value.toLowerCase()
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.NOT_LOWERCASE);
         }
 
         if (
             (this.constraints & Constraints.TRIM) !== 0 &&
             value !== value.trim()
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.NOT_TRIM);
         }
 
         return true;
@@ -324,29 +399,29 @@ export class ValidatorNumber extends ValidatorPrimitive {
             (this.constraints & Constraints.INTEGER) !== 0 &&
             (value | 0) !== value
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.NOT_AN_INTEGER);
         }
 
         if (
             (this.constraints & Constraints.MAX) !== 0 &&
             value >= this.maxNumber
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.INVALID_MAX);
         }
 
         if (
             (this.constraints & Constraints.MIN) !== 0 &&
             value < this.minNumber
         ) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.INVALID_MIN);
         }
 
         if ((this.constraints & Constraints.NEGATIVE) !== 0 && value > 0) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.NOT_A_NEGATIVE_NUMBER);
         }
 
         if ((this.constraints & Constraints.POSITIVE) !== 0 && value <= 0) {
-            return false;
+            throw new ValidatorError(InvalidValueErrors.NOT_A_POSITIVE_NUMBER);
         }
 
         return true;
@@ -389,7 +464,11 @@ export class ValidatorObject {
                 return false;
             }
 
-            if (!schemaValue.valid(value)) return false;
+            try {
+                schemaValue.valid(value);
+            } catch (e) {
+                throw ValidatorError.throw(e, key);
+            }
 
             if (schemaValue instanceof ValidatorPrimitive) {
                 schemaValue.applyModifications(obj, key);
@@ -430,7 +509,11 @@ export class ValidatorAlternative {
 
     one(value: any): boolean {
         for (const schema of this.schemas) {
-            if (schema.valid(value) === true) return true;
+            try {
+                if (schema.valid(value) === true) return true;
+            } catch (e) {
+                continue;
+            }
         }
 
         return false;
@@ -438,7 +521,11 @@ export class ValidatorAlternative {
 
     all(value: any): boolean {
         for (const schema of this.schemas) {
-            if (schema.valid(value) === false) return false;
+            try {
+                if (schema.valid(value) === true) continue;
+            } catch (e) {
+                return false;
+            }
         }
 
         return true;

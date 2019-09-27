@@ -1,9 +1,13 @@
 import { Validator } from './validator';
 
 const schema = Validator.object().keys({
-    a: Validator.string()
-        .lowercase()
-        .trim(),
+    a: Validator.object().keys({
+        b: Validator.object().keys({
+            c: Validator.object().keys({
+                d: Validator.string().email(),
+            }),
+        }),
+    }),
     thisIsANumber: Validator.number()
         .greater(6)
         .less(9),
@@ -16,7 +20,13 @@ const schema = Validator.object().keys({
 });
 
 const values = {
-    a: '            AHHHHHHHHHHHHHHHHHHHHHHHH !               ',
+    a: {
+        b: {
+            c: {
+                d: '            AHHHHHHHHHHHHHHHHHHHHHHHH !               ',
+            },
+        },
+    },
     thisIsANumber: 6,
     b: {
         c: 'c',
@@ -26,6 +36,4 @@ const values = {
     },
 };
 
-console.log(Validator.validate(schema, values), values);
-
-console.log(Validator.alternatives([schema, Validator.number()]).one(3));
+console.log(Validator.validate(schema, values));
