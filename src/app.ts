@@ -1,6 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import session from 'express-session';
+import cors from 'cors';
 
 import Routes from './routes';
 import { Database } from './database';
@@ -21,6 +22,7 @@ async function app() {
     const db = new Database();
 
     server
+        .use(cors())
         .use(bodyParser.urlencoded({ extended: false }))
         .use(bodyParser.json())
         .use(
@@ -50,8 +52,8 @@ async function app() {
 
     Routes(server);
 
-    server.listen(3000, '0.0.0.0', () => {
-        console.log('Example app listening on port 3000!');
+    server.listen(8080, '0.0.0.0', () => {
+        console.log('Example app listening on port 8080!');
     });
 }
 
