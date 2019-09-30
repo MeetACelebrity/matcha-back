@@ -85,6 +85,10 @@ export default function signUpMiddleware(router: express.Router) {
 
                 return;
             }
+            const urlConfirmation = `/auth/confirmation/${result.uuid}/${result.token}`;
+
+            // send email here
+            console.log(urlConfirmation);
 
             res.json({
                 statusCode: SignUpStatusCode.DONE,

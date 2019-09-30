@@ -12,6 +12,8 @@ export default function authRoutes(): Router {
 
     setupSignUp(router);
 
+    setupConfirmation(router);
+
     router.get('/logout', req => {
         req.session!.destroy(console.error);
     });

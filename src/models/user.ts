@@ -16,6 +16,10 @@ export interface GetUserByUsernameArgs extends ModelArgs {
     password: string;
 }
 
+export interface UserVerifyArgs extends ModelArgs {
+    uuid: string;
+    token: string;
+}
 /**
  * An External User can be safely sent
  * to the client because it does not hold sensible data.
@@ -68,26 +72,39 @@ export async function createUser({
     givenName,
     familyName,
     password,
-}: CreateUserArgs): Promise<string | null> {
+}: CreateUserArgs): Promise<{ uuid: string; token: string } | null> {
     const id = uuid();
+    const token = uuid();
 
     const query = `
-		INSERT INTO users (
-			uuid,
-			email,
-			username,
-			given_name,
-			family_name,
-			password
-		) 
-		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6
-		)
+        WITH 
+            id_user 
+        AS ( 
+                INSERT INTO users (
+                    uuid,
+                    email,
+                    username,
+                    given_name,
+                    family_name,
+                    password
+                ) 
+                VALUES (
+                    $1,
+                    $2,
+                    $3,
+                    $4,
+                    $5,
+                    $6
+                )
+                RETURNING id
+            )
+        INSERT INTO
+            tokens
+            (token, user_id)
+        SELECT 
+            $7, id
+        FROM
+            id_user;
 	`;
 
     try {
@@ -98,9 +115,10 @@ export async function createUser({
             givenName,
             familyName,
             await hash(password),
+            token,
         ]);
 
-        return id;
+        return { token, uuid: id };
     } catch (e) {
         console.error(e);
         return null;
@@ -134,6 +152,19 @@ export async function getUserByUsername({
         } = await db.query(query, [username]);
 
         return user;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function userVerify({ db, uuid, token }: UserVerifyArgs) {
+    const query = ``;
+
+    try {
+        const result = await db.query(query, [uuid, token]);
+
+        return result;
     } catch (e) {
         console.error(e);
         return null;
