@@ -4,6 +4,7 @@ import { createUser, getUserByUsername } from '../models/user';
 
 import setupSignUp from './sign-up';
 import setupSignIn from './sign-in';
+import setupConfirmation from './confirmation';
 
 export default function authRoutes(): Router {
     const router = Router();

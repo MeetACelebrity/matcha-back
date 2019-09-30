@@ -24,7 +24,7 @@ async function app() {
     server
         .use(
             cors({
-                origin: ['http://localhost:3000', 'http://10.11.7.10:3000'],
+                origin: ['http://localhost:3000', 'http://e2r7p12:3000'],
                 credentials: true,
             })
         )

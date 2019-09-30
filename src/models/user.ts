@@ -158,13 +158,56 @@ export async function getUserByUsername({
     }
 }
 
-export async function userVerify({ db, uuid, token }: UserVerifyArgs) {
-    const query = ``;
-
+export async function userVerify({
+    db,
+    uuid,
+    token,
+}: UserVerifyArgs): Promise<InternalUser | null> {
+    const query = `
+        WITH 
+            users_tokens
+        AS (
+                SELECT 
+                    users.id 
+                FROM 
+                    users 
+                INNER JOIN 
+                    tokens 
+                ON 
+                    users.id = tokens.user_id 
+                WHERE 
+                    token=$1
+                AND 
+                    uuid=$2
+            )
+        UPDATE
+            users
+        SET
+            confirmed='t'
+        WHERE
+            id = (
+                SELECT
+                    users_tokens.id
+                FROM
+                    users_tokens
+            )
+        RETURNING
+            id,
+            uuid,
+            given_name as "givenName",
+            family_name as "familyName",
+            username,
+            email,
+            password,
+            created_at as "createdAt",
+            confirmed
+        `;
     try {
-        const result = await db.query(query, [uuid, token]);
+        const {
+            rows: [user],
+        } = await db.query(query, [token, uuid]);
 
-        return result;
+        return user;
     } catch (e) {
         console.error(e);
         return null;
