@@ -33,7 +33,7 @@
     },
     "scripts": {
         "start": "node -r ts-node/register -r dotenv/config ./src/app.ts",
-        "watch": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/app.ts",
+        "watch": "nodemon --watch 'src/**/*.ts' --exec 'npm start'",
         "prebuild": "docker build . -t 'db'",
         "build": "tsc",
         "setup:database": "docker rm -f database ; docker run -d -p 35432:5432 --name database db",

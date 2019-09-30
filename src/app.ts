@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import session from 'express-session';
 import cors from 'cors';
 
-import Routes from './routes';
+import routes from './routes';
 import { Database } from './database';
 
 interface Context {
@@ -22,17 +22,23 @@ async function app() {
     const db = new Database();
 
     server
-        .use(cors())
+        .use(
+            cors({
+                origin: ['http://localhost:3000', 'http://10.11.7.10:3000'],
+                credentials: true,
+            })
+        )
         .use(bodyParser.urlencoded({ extended: false }))
         .use(bodyParser.json())
         .use(
             session({
-                secret: '6a341ad2-8dfb-4ac5-9d75-aac72417af46',
+                secret: 'test',
+                resave: false,
                 cookie: {
+                    maxAge: 1e7,
                     httpOnly: true,
                     signed: true,
                 },
-                resave: false,
                 saveUninitialized: true,
             })
         )
@@ -50,7 +56,7 @@ async function app() {
             next();
         });
 
-    Routes(server);
+    routes(server);
 
     server.listen(8080, '0.0.0.0', () => {
         console.log('Example app listening on port 8080!');

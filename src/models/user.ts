@@ -11,8 +11,54 @@ export interface CreateUserArgs extends ModelArgs {
     password: string;
 }
 
-export interface User {
-    //
+export interface GetUserByUsernameArgs extends ModelArgs {
+    username: string;
+    password: string;
+}
+
+/**
+ * An External User can be safely sent
+ * to the client because it does not hold sensible data.
+ */
+export interface ExternalUser {
+    uuid: string;
+    givenName: string;
+    familyName: string;
+    username: string;
+    email: string;
+    createdAt: string;
+    confirmed: boolean;
+}
+
+/**
+ * An InternalUser contains informations
+ * that must not be sent to the client
+ * such as the password.
+ */
+export interface InternalUser extends ExternalUser {
+    id: number;
+    password: string;
+}
+
+export function internalUserToExternalUser({
+    id,
+    uuid,
+    givenName,
+    familyName,
+    username,
+    email,
+    createdAt,
+    confirmed,
+}: InternalUser): ExternalUser {
+    return {
+        uuid,
+        givenName,
+        familyName,
+        username,
+        email,
+        createdAt,
+        confirmed,
+    };
 }
 
 export async function createUser({
@@ -56,6 +102,40 @@ export async function createUser({
 
         return id;
     } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function getUserByUsername({
+    db,
+    username,
+    password,
+}: GetUserByUsernameArgs): Promise<InternalUser | null> {
+    const query = `
+        SELECT
+            id,
+            uuid,
+            given_name as "givenName",
+            family_name as "familyName",
+            username,
+            email,
+            password,
+            created_at as "createdAt",
+            confirmed
+        FROM
+            users
+        WHERE username = $1
+    `;
+
+    try {
+        const {
+            rows: [user],
+        } = await db.query(query, [username]);
+
+        return user;
+    } catch (e) {
+        console.error(e);
         return null;
     }
 }
