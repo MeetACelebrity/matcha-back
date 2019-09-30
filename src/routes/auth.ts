@@ -14,6 +14,8 @@ const enum SignUpStatusCode {
     FAMILY_NAME_INCORRECT = 'FAMILY_NAME_INCORRECT',
     PASSWORD_INCORRECT = 'PASSWORD_INCORRECT',
 
+    FORBIDDEN_INFORMATION = 'FORBIDDEN_INFORMATION',
+
     UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
@@ -81,16 +83,12 @@ export default function authRoutes(): Router {
                 return;
             }
 
-            res.json({ statusCode });
-
-            return;
-
             const result = await createUser({ db: res.locals.db, ...req.body });
             if (result === null) {
                 res.status(500);
 
                 res.json({
-                    statusCode: SignUpStatusCode.USERNAME_INCORRECT,
+                    statusCode: SignUpStatusCode.FORBIDDEN_INFORMATION,
                 });
 
                 return;
