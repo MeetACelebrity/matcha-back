@@ -1,6 +1,4 @@
 import { Router, Request } from 'express';
-import { Validator, ValidatorObject } from '../utils/validator';
-import { createUser, getUserByUsername } from '../models/user';
 
 import setupSignUp from './sign-up';
 import setupSignIn from './sign-in';

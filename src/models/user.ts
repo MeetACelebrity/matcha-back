@@ -143,7 +143,8 @@ export async function getUserByUsername({
             confirmed
         FROM
             users
-        WHERE username = $1
+        WHERE 
+            username = $1
     `;
 
     try {

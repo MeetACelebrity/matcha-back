@@ -9,6 +9,7 @@ const enum SignInStatusCode {
 
     USERNAME_INCORRECT = 'USERNAME_INCORRECT',
     PASSWORD_INCORRECT = 'PASSWORD_INCORRECT',
+    INVALID_ACCOUNT = 'INVALID_ACCOUNT',
 
     UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
@@ -58,10 +59,19 @@ export default function signInMiddleware(router: express.Router) {
                 db: res.locals.db,
                 ...req.body,
             });
+
             if (user === null) {
                 res.status(404);
 
                 res.json({ statusCode: SignInStatusCode.USERNAME_INCORRECT });
+
+                return;
+            }
+
+            if (!user.confirmed) {
+                res.status(404);
+
+                res.json({ statusCode: SignInStatusCode.INVALID_ACCOUNT });
 
                 return;
             }
