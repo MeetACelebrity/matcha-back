@@ -1,0 +1,45 @@
+heml
+    head
+        font(href="https://fonts.googleapis.com/css?family=Roboto:400,500|Saira:700&display=swap")
+        block style
+            style.
+                body {
+                    font-family: 'Roboto', serif;
+                    padding-top: 30px;
+                    background: #EDF2F7;
+                    line-height: 1.5rem
+                }
+                .text-block {
+                    background: white;
+                    padding: 5px 10px;
+                }
+                .footer {
+                    color: grey;
+                    font-size: .8rem;
+                    margin-top: 0;
+                    text-align: center;
+                    margin-bottom: 30px;
+                }
+                a {
+                    color: black;
+                    text-decoration: none;
+                }
+    body
+        container
+            row
+                column
+                    h1(style={ 'margin-top': 0, 'text-align': 'center' })
+                        a(href="https://artisansfiables.fr")
+                            span(style={ 'font-family': 'Saira' }) MEET A CELEBRITY
+            row
+                column
+                    block head
+                    row.text-block(style={ padding: '0 10px' })
+                        column
+                            block content
+                            hr
+                            p.footer
+                                | Ceci est un mail automatique envoyé par
+                                |
+                                a(href="mailto:no-reply@meetacelebrity.app") no-reply@meetacelebrity.app
+                                | .

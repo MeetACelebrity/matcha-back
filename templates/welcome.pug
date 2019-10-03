@@ -1,0 +1,34 @@
+extends _layout.pug
+
+append style
+    style.
+        h2.welcome {
+            background: white;
+            padding: 20px 20px;
+            margin: 0;
+            text-align: center;
+            background: none;
+            margin: 0;
+        }
+        .confirm-button {
+            background: #2B6CB0;
+            margin-bottom: 20px;
+        }
+
+block head
+    h2.welcome.
+        Bievenue parmi nous #{username} !
+
+block content
+    row
+        column(style={ 'padding': '10px 20px' })
+            p
+                | Nous vous remercions de votre inscription sur
+                |
+                span(style={ 'font-weight': 'bold' }) Meet a Celebrity
+                |.
+            p.
+                Venez discuter avec vos célébrités préférées, de François Rabelais à Jacques Chirac, en passant par Brad Pitt et tant d'autres !
+    row
+        column
+            button.confirm-button(href=signup_url) Je ne saurais attendre plus longtemps
