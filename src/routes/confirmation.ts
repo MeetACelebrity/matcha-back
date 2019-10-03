@@ -25,7 +25,7 @@ export default function setupConfirmation(router: express.Router) {
             const newUser = internalUserToExternalUser(user);
             console.log('we will set the session to', newUser);
             req.session!.user = newUser;
-            res.json({ statusCode: SignInStatusCode.DONE });
+            res.redirect('http://10.12.3.12:3000/');
         } catch (e) {
             console.error(e);
         }
