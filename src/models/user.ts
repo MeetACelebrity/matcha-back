@@ -23,6 +23,12 @@ export interface SetPasswordResetArgs extends ModelArgs {
     id: number;
 }
 
+export interface ResetingPassword extends ModelArgs {
+    uuid: string;
+    token: string;
+    password: string;
+}
+
 export interface UserVerifyArgs extends ModelArgs {
     uuid: string;
     token: string;
@@ -247,13 +253,14 @@ export async function userVerify({
             rows: [user],
         } = await db.query(query, [token, uuid]);
 
-        return user;
+        return user || null;
     } catch (e) {
         console.error(e);
         return null;
     }
 }
 
+// ts returning of function
 export async function setPasswordReset({ db, id }: SetPasswordResetArgs) {
     const token = uuid();
     const query = `
@@ -287,6 +294,64 @@ export async function setPasswordReset({ db, id }: SetPasswordResetArgs) {
         const { rowCount } = await db.query(query, [id, token]);
         if (rowCount === 0) return null;
         return token;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function resetingPassword({
+    db,
+    uuid,
+    token,
+    password,
+}: ResetingPassword) {
+    const query = `
+        WITH 
+            users_tokens
+        AS (
+                SELECT 
+                    users.id 
+                FROM 
+                    users 
+                INNER JOIN 
+                    tokens 
+                ON 
+                    users.id = tokens.user_id 
+                WHERE 
+                    token=$1
+                AND 
+                    uuid=$2
+            )
+        UPDATE
+            users
+        SET
+            password=$3
+        WHERE
+            id = (
+                SELECT
+                    users_tokens.id
+                FROM
+                    users_tokens
+            )
+        RETURNING
+            id,
+            uuid,
+            given_name as "givenName",
+            family_name as "familyName",
+            username,
+            email,
+            password,
+            created_at as "createdAt",
+            confirmed
+        `;
+
+    try {
+        const {
+            rows: [user],
+        } = await db.query(query, [token, uuid, await hash(password)]);
+
+        return user || null;
     } catch (e) {
         console.error(e);
         return null;
