@@ -1,6 +1,6 @@
 import * as express from 'express';
 import { Validator, ValidatorObject } from '../utils/validator';
-import { createUser, getUserByUsername } from '../models/user';
+import { createUser } from '../models/user';
 
 const enum SignUpStatusCode {
     DONE = 'DONE',

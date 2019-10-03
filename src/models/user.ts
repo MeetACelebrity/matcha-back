@@ -13,13 +13,21 @@ export interface CreateUserArgs extends ModelArgs {
 
 export interface GetUserByUsernameArgs extends ModelArgs {
     username: string;
-    password: string;
+}
+
+export interface GetUserByEmailArgs extends ModelArgs {
+    email: string;
+}
+
+export interface SetPasswordResetArgs extends ModelArgs {
+    id: number;
 }
 
 export interface UserVerifyArgs extends ModelArgs {
     uuid: string;
     token: string;
 }
+
 /**
  * An External User can be safely sent
  * to the client because it does not hold sensible data.
@@ -100,9 +108,9 @@ export async function createUser({
             )
         INSERT INTO
             tokens
-            (token, user_id)
+            (token, user_id, type)
         SELECT 
-            $7, id
+            $7, id, 'SIGN_UP'
         FROM
             id_user;
 	`;
@@ -128,7 +136,6 @@ export async function createUser({
 export async function getUserByUsername({
     db,
     username,
-    password,
 }: GetUserByUsernameArgs): Promise<InternalUser | null> {
     const query = `
         SELECT
@@ -152,7 +159,39 @@ export async function getUserByUsername({
             rows: [user],
         } = await db.query(query, [username]);
 
-        return user;
+        return user || null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function getUserByEmail({
+    db,
+    email,
+}: GetUserByEmailArgs): Promise<InternalUser | null> {
+    const query = `
+        SELECT
+            id,
+            uuid,
+            given_name as "givenName",
+            family_name as "familyName",
+            username,
+            email,
+            password,
+            created_at as "createdAt",
+            confirmed
+        FROM
+            users
+        WHERE 
+            email = $1
+    `;
+
+    try {
+        const {
+            rows: [user],
+        } = await db.query(query, [email]);
+        return user || null;
     } catch (e) {
         console.error(e);
         return null;
@@ -209,6 +248,45 @@ export async function userVerify({
         } = await db.query(query, [token, uuid]);
 
         return user;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function setPasswordReset({ db, id }: SetPasswordResetArgs) {
+    const token = uuid();
+    const query = `
+        INSERT INTO
+            tokens
+            (
+                user_id, 
+                token, 
+                type
+            )
+        VALUES 
+            (
+                $1,
+                $2,
+                'PASSWORD_RESET'
+            )
+        ON CONFLICT
+            (
+                user_id, 
+                type
+            )
+        DO
+            UPDATE
+            SET 
+                token=$2
+            WHERE
+                tokens.user_id=$1
+        `;
+
+    try {
+        const { rowCount } = await db.query(query, [id, token]);
+        if (rowCount === 0) return null;
+        return token;
     } catch (e) {
         console.error(e);
         return null;

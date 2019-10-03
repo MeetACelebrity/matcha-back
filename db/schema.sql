@@ -9,6 +9,11 @@ CREATE TYPE "gender" AS ENUM (
   'FEMELE'
 );
 
+CREATE TYPE "token_type" AS ENUM (
+  'SIGN_UP',
+  'PASSWORD_RESET'
+);
+
 CREATE TYPE "notification_type" AS ENUM (
   'GOT_LIKE',
   'GOT_VISIT',
@@ -61,6 +66,7 @@ CREATE TABLE "tokens" (
   "id" serial PRIMARY KEY,
   "token" uuid UNIQUE NOT NULL,
   "user_id" int NOT NULL,
+  "type" token_type NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
@@ -159,6 +165,8 @@ ALTER TABLE "users_tags" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "matches" ADD FOREIGN KEY ("a") REFERENCES "users" ("id");
 
 ALTER TABLE "matches" ADD FOREIGN KEY ("b") REFERENCES "users" ("id");
+
+CREATE UNIQUE INDEX ON "tokens" ("user_id", "type");
 
 CREATE UNIQUE INDEX ON "likes" ("liker", "liked");
 

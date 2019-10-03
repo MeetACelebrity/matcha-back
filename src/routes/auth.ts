@@ -3,6 +3,7 @@ import { Router, Request } from 'express';
 import setupSignUp from './sign-up';
 import setupSignIn from './sign-in';
 import setupConfirmation from './confirmation';
+import setupResetPassword from './resetpassword';
 
 export default function authRoutes(): Router {
     const router = Router();
@@ -12,6 +13,8 @@ export default function authRoutes(): Router {
     setupSignUp(router);
 
     setupConfirmation(router);
+
+    setupResetPassword(router);
 
     router.get('/logout', req => {
         req.session!.destroy(console.error);
