@@ -1,8 +1,9 @@
 import * as express from 'express';
 
-import { updateGeneralUser } from '../../models/user';
+import { updateGeneralUser, updatePasswordUser } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { Context } from './../../app';
+import { hash } from 'argon2';
 
 const enum UpdateUserStatusCode {
     DONE = 'DONE',
@@ -20,6 +21,7 @@ const stringSchema = Validator.string()
     .min(3)
     .max(20);
 
+// /general
 const generalSchema: ValidatorObject = Validator.object().keys({
     email: Validator.string().email(),
     username: stringSchema,
@@ -52,6 +54,26 @@ function generalRouteValidation(req: express.Request): UpdateUserStatusCode {
     return UpdateUserStatusCode.DONE;
 }
 
+// /password
+const paswordSchema: ValidatorObject = Validator.object().keys({
+    password: Validator.string().min(6),
+});
+function passwordRouteValidation(req: express.Request): UpdateUserStatusCode {
+    const validationResult = Validator.validate(generalSchema, req.body);
+
+    if (typeof validationResult !== 'boolean') {
+        const {
+            error: { concernedKey },
+        } = validationResult;
+
+        if (concernedKey === 'password') {
+            return UpdateUserStatusCode.PASSWORD_INCORRECT;
+        }
+        return UpdateUserStatusCode.UNKNOWN_ERROR;
+    }
+    return UpdateUserStatusCode.DONE;
+}
+
 export default function setupTextual(router: express.Router) {
     router.put('/general', async (req, res) => {
         const { user }: Context = res.locals;
@@ -63,17 +85,15 @@ export default function setupTextual(router: express.Router) {
         }
         if (statusCode !== UpdateUserStatusCode.DONE) {
             res.status(400);
-
             res.json({
                 statusCode,
             });
-
             return;
         }
 
         const result = await updateGeneralUser({
-            uuid: user.uuid,
             db: res.locals.db,
+            uuid: user.uuid,
             email: req.body.email,
             givenName: req.body.givenName,
             familyName: req.body.familyName,
@@ -89,9 +109,43 @@ export default function setupTextual(router: express.Router) {
         });
     });
 
+    router.put('/password', async (req, res) => {
+        const { user }: Context = res.locals;
+        const statusCode = passwordRouteValidation(req);
+
+        if (user === undefined) {
+            res.sendStatus(404);
+            return;
+        }
+        if (statusCode !== UpdateUserStatusCode.DONE) {
+            res.status(400);
+            res.json({
+                statusCode,
+            });
+            return;
+        }
+
+        if (user.password === (await hash(req.body.newPassword))) {
+            const result = await updatePasswordUser({
+                db: res.locals.db,
+                uuid: user.uuid,
+                newPassword: req.body.newPassword,
+            });
+            if (result === null) {
+                res.status(404);
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        }
+        res.json({
+            statusCode: UpdateUserStatusCode.PASSWORD_INCORRECT,
+        });
+    });
+
     router.put('/extended', async (req, res) => {});
 
     router.put('/biography', async (req, res) => {});
-
-    router.put('/password', async (req, res) => {});
 }

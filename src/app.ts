@@ -5,10 +5,11 @@ import cors from 'cors';
 
 import routes from './routes';
 import { Database } from './database';
+import { InternalUser } from './models/user';
 
 export interface Context {
     db: Database;
-    user?: User;
+    user?: InternalUser;
     isAuthenticated: boolean;
 }
 
@@ -43,6 +44,7 @@ async function app() {
             })
         )
         .use((req, res, next) => {
+            // get all user data
             const context: Context = {
                 db,
                 user: req.session!.user,

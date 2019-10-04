@@ -34,11 +34,16 @@ export interface UserVerifyArgs extends ModelArgs {
     token: string;
 }
 
-export interface UpdateGeneralUser extends ModelArgs {
+export interface UpdateGeneralUserArgs extends ModelArgs {
     uuid: string;
     email: string;
     givenName: string;
     familyName: string;
+}
+
+export interface UpdatePasswordUserArgs extends ModelArgs {
+    uuid: string;
+    newPassword: string;
 }
 /**
  * An External User can be safely sent
@@ -373,7 +378,7 @@ export async function updateGeneralUser({
     email,
     givenName,
     familyName,
-}: UpdateGeneralUser): Promise<true | null> {
+}: UpdateGeneralUserArgs): Promise<true | null> {
     const query = `
         UPDATE
             users
@@ -392,6 +397,30 @@ export async function updateGeneralUser({
             givenName,
             familyName,
         ]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updatePasswordUser({
+    db,
+    uuid,
+    newPassword,
+}: UpdatePasswordUserArgs): Promise<true | null> {
+    const query = `
+        UPDATE
+            users
+        SET
+            password=$2
+        WHERE
+            uuid=$1
+        `;
+
+    try {
+        const { rowCount } = await db.query(query, [uuid, newPassword]);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {
