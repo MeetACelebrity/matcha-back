@@ -1,8 +1,9 @@
 import * as express from 'express';
+import { FRONT_ENDPOINT } from '../../constants';
 
-import { internalUserToExternalUser, userVerify } from '../models/user';
+import { internalUserToExternalUser, userVerify } from '../../models/user';
 
-const enum SignInStatusCode {
+const enum ConfirmationStatusCode {
     DONE = 'DONE',
     LINK_INCORRECT = 'LINK_INCORRECT',
 }
@@ -18,14 +19,13 @@ export default function setupConfirmation(router: express.Router) {
 
             if (user === null) {
                 res.status(404);
-                res.json({ statusCode: SignInStatusCode.LINK_INCORRECT });
+                res.json({ statusCode: ConfirmationStatusCode.LINK_INCORRECT });
                 return;
             }
 
-            const newUser = internalUserToExternalUser(user);
-            console.log('we will set the session to', newUser);
-            req.session!.user = newUser;
-            res.redirect('http://10.12.3.12:3000/');
+            console.log('we will set the session to', user);
+            req.session!.user = user.uuid;
+            res.redirect(FRONT_ENDPOINT);
         } catch (e) {
             console.error(e);
         }

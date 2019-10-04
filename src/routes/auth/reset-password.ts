@@ -1,13 +1,14 @@
 import * as express from 'express';
 
+import { FRONT_ENDPOINT } from '../../constants';
 import {
     getUserByEmail,
     setPasswordReset,
     resetingPassword,
     internalUserToExternalUser,
-} from '../models/user';
+} from '../../models/user';
 
-const enum SignInStatusCode {
+const enum ResetPasswordStatusCode {
     DONE = 'DONE',
     UNCONFIRM_ACCOUNT = 'UNCONFIRM_ACCOUNT',
     UNKNOWN_EMAIL = 'UNKNOWN_EMAIL',
@@ -27,12 +28,14 @@ export default function setupResetPassword(router: express.Router) {
 
             if (user === null) {
                 res.status(404);
-                res.json({ statusCode: SignInStatusCode.UNKNOWN_EMAIL });
+                res.json({ statusCode: ResetPasswordStatusCode.UNKNOWN_EMAIL });
                 return;
             }
             if (!user.confirmed) {
                 res.status(404);
-                res.json({ statusCode: SignInStatusCode.UNCONFIRM_ACCOUNT });
+                res.json({
+                    statusCode: ResetPasswordStatusCode.UNCONFIRM_ACCOUNT,
+                });
                 return;
             }
 
@@ -43,21 +46,21 @@ export default function setupResetPassword(router: express.Router) {
             });
             if (result === null) {
                 res.status(404);
-                res.json({ statusCode: SignInStatusCode.UNKNOWN_ERROR });
+                res.json({ statusCode: ResetPasswordStatusCode.UNKNOWN_ERROR });
                 return;
             }
             // send link
-            console.log(`/reset-password/changing/${user.uuid}/${result}`);
+            console.log(
+                `${FRONT_ENDPOINT}/reset-password/password/${user.uuid}/${result}`
+            );
             res.status(200);
-            res.json({ statusCode: SignInStatusCode.DONE });
+            res.json({ statusCode: ResetPasswordStatusCode.DONE });
             return;
         } catch (e) {
             console.error(e);
         }
     });
 
-    // Get uuid, token, and desiderd password
-    // if all good check token and uuid
     router.post('/reset-password/changing/', async (req, res) => {
         try {
             const user = await resetingPassword({
@@ -68,13 +71,15 @@ export default function setupResetPassword(router: express.Router) {
             });
             if (user === null) {
                 res.status(404);
-                res.json({ statusCode: SignInStatusCode.LINK_INCORRECT });
+                res.json({
+                    statusCode: ResetPasswordStatusCode.LINK_INCORRECT,
+                });
                 return;
             }
-            const newUser = internalUserToExternalUser(user);
-            console.log('we will set the session to', newUser);
-            req.session!.user = newUser;
-            res.json({ statusCode: SignInStatusCode.DONE });
+
+            console.log('we will set the session to', user);
+            req.session!.uuid = user.uuid;
+            res.redirect(`${FRONT_ENDPOINT}/sign-up`);
         } catch (e) {
             console.error(e);
         }

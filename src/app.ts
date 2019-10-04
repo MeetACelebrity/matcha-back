@@ -6,9 +6,9 @@ import cors from 'cors';
 import routes from './routes';
 import { Database } from './database';
 
-interface Context {
+export interface Context {
     db: Database;
-    user: User;
+    user?: User;
     isAuthenticated: boolean;
 }
 
@@ -24,7 +24,7 @@ async function app() {
     server
         .use(
             cors({
-                origin: ['http://localhost:3000', 'http://e2r7p12:3000'],
+                origin: ['http://localhost:3000', 'http://e2r3p10.42.fr:3000'],
                 credentials: true,
             })
         )

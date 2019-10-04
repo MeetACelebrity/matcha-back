@@ -3,7 +3,7 @@ import { Router, Request } from 'express';
 import setupSignUp from './sign-up';
 import setupSignIn from './sign-in';
 import setupConfirmation from './confirmation';
-import setupResetPassword from './resetpassword';
+import setupResetPassword from './reset-password';
 
 export default function authRoutes(): Router {
     const router = Router();

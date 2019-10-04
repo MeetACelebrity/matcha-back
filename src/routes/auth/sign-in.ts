@@ -1,8 +1,11 @@
 import * as express from 'express';
 import { verify } from 'argon2';
 
-import { Validator, ValidatorObject } from '../utils/validator';
-import { internalUserToExternalUser, getUserByUsername } from '../models/user';
+import { Validator, ValidatorObject } from '../../utils/validator';
+import {
+    internalUserToExternalUser,
+    getUserByUsername,
+} from '../../models/user';
 
 const enum SignInStatusCode {
     DONE = 'DONE',
@@ -77,11 +80,9 @@ export default function signInMiddleware(router: express.Router) {
             }
 
             if (await verify(user.password, req.body.password)) {
-                const newUser = internalUserToExternalUser(user);
+                console.log('we will set the session to', user);
 
-                console.log('we will set the session to', newUser);
-
-                req.session!.user = newUser;
+                req.session!.user = user.uuid;
 
                 res.json({ statusCode: SignInStatusCode.DONE });
 

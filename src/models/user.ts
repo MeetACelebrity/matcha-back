@@ -34,6 +34,12 @@ export interface UserVerifyArgs extends ModelArgs {
     token: string;
 }
 
+export interface UpdateGeneralUser extends ModelArgs {
+    uuid: string;
+    email: string;
+    givenName: string;
+    familyName: string;
+}
 /**
  * An External User can be safely sent
  * to the client because it does not hold sensible data.
@@ -229,7 +235,7 @@ export async function userVerify({
         UPDATE
             users
         SET
-            confirmed='t'
+            confirmed=true
         WHERE
             id = (
                 SELECT
@@ -261,7 +267,10 @@ export async function userVerify({
 }
 
 // ts returning of function
-export async function setPasswordReset({ db, id }: SetPasswordResetArgs) {
+export async function setPasswordReset({
+    db,
+    id,
+}: SetPasswordResetArgs): Promise<string | null> {
     const token = uuid();
     const query = `
         INSERT INTO
@@ -305,7 +314,7 @@ export async function resetingPassword({
     uuid,
     token,
     password,
-}: ResetingPassword) {
+}: ResetingPassword): Promise<InternalUser | null> {
     const query = `
         WITH 
             users_tokens
@@ -352,6 +361,39 @@ export async function resetingPassword({
         } = await db.query(query, [token, uuid, await hash(password)]);
 
         return user || null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateGeneralUser({
+    db,
+    uuid,
+    email,
+    givenName,
+    familyName,
+}: UpdateGeneralUser): Promise<true | null> {
+    const query = `
+        UPDATE
+            users
+        SET
+            email=$1,
+            given_name=$2
+            family_name=$3
+        WHERE
+            uuid=$4
+            `;
+
+    try {
+        const { rowCount } = await db.query(query, [
+            uuid,
+            email,
+            givenName,
+            familyName,
+        ]);
+        if (rowCount === 0) return null;
+        return true;
     } catch (e) {
         console.error(e);
         return null;

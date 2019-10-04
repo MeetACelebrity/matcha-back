@@ -1,6 +1,6 @@
 import * as express from 'express';
-import { Validator, ValidatorObject } from '../utils/validator';
-import { createUser } from '../models/user';
+import { Validator, ValidatorObject } from '../../utils/validator';
+import { createUser } from '../../models/user';
 
 const enum SignUpStatusCode {
     DONE = 'DONE',
@@ -85,7 +85,7 @@ export default function signUpMiddleware(router: express.Router) {
 
                 return;
             }
-            const urlConfirmation = `/auth/confirmation/${result.uuid}/${result.token}`;
+            const urlConfirmation = `BACK: ADRESS: /auth/confirmation/${result.uuid}/${result.token}`;
 
             // send email here
             console.log(urlConfirmation);
