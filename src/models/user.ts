@@ -19,6 +19,10 @@ export interface GetUserByEmailArgs extends ModelArgs {
     email: string;
 }
 
+export interface GetUserByUuidArgs extends ModelArgs {
+    uuid: string;
+}
+
 export interface SetPasswordResetArgs extends ModelArgs {
     id: number;
 }
@@ -208,6 +212,37 @@ export async function getUserByEmail({
         const {
             rows: [user],
         } = await db.query(query, [email]);
+        return user || null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function getUserByUuid({
+    db,
+    uuid,
+}: GetUserByUuidArgs): Promise<InternalUser | null> {
+    const query = `
+        SELECT
+            id,
+            uuid,
+            given_name as "givenName",
+            family_name as "familyName",
+            username,
+            email,
+            password,
+            created_at as "createdAt",
+            confirmed
+        FROM
+            users
+        WHERE 
+            uuid = $1
+        `;
+    try {
+        const {
+            rows: [user],
+        } = await db.query(query, [uuid]);
         return user || null;
     } catch (e) {
         console.error(e);

@@ -1,3 +1,4 @@
+import { FRONT_ENDPOINT } from './constants';
 import express from 'express';
 import bodyParser from 'body-parser';
 import session from 'express-session';
@@ -25,7 +26,7 @@ async function app() {
     server
         .use(
             cors({
-                origin: ['http://localhost:3000', 'http://e2r3p10.42.fr:3000'],
+                origin: ['http://localhost:3000', FRONT_ENDPOINT],
                 credentials: true,
             })
         )
