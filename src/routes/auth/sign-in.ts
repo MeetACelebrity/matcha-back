@@ -52,9 +52,7 @@ export default function signInMiddleware(router: express.Router) {
 
             if (statusCode !== SignInStatusCode.DONE) {
                 res.status(400);
-
                 res.json({ statusCode });
-
                 return;
             }
 
@@ -65,32 +63,24 @@ export default function signInMiddleware(router: express.Router) {
 
             if (user === null) {
                 res.status(404);
-
                 res.json({ statusCode: SignInStatusCode.USERNAME_INCORRECT });
-
                 return;
             }
 
             if (!user.confirmed) {
                 res.status(404);
-
                 res.json({ statusCode: SignInStatusCode.INVALID_ACCOUNT });
-
                 return;
             }
 
             if (await verify(user.password, req.body.password)) {
                 console.log('we will set the session to', user);
-
                 req.session!.user = user.uuid;
-
                 res.json({ statusCode: SignInStatusCode.DONE });
 
                 return;
             }
-
             res.status(401);
-
             res.json({ statusCode: SignInStatusCode.PASSWORD_INCORRECT });
         } catch (e) {
             console.error(e);

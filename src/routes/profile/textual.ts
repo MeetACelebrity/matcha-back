@@ -79,7 +79,7 @@ export default function setupTextual(router: express.Router) {
         const { user }: Context = res.locals;
         const statusCode = generalRouteValidation(req);
 
-        if (user === undefined) {
+        if (user === null) {
             res.sendStatus(404);
             return;
         }
@@ -113,7 +113,7 @@ export default function setupTextual(router: express.Router) {
         const { user }: Context = res.locals;
         const statusCode = passwordRouteValidation(req);
 
-        if (user === undefined) {
+        if (user === null) {
             res.sendStatus(404);
             return;
         }

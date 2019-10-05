@@ -6,11 +6,11 @@ import cors from 'cors';
 
 import routes from './routes';
 import { Database } from './database';
-import { InternalUser } from './models/user';
+import { InternalUser, getUserByUuid } from './models/user';
 
 export interface Context {
     db: Database;
-    user?: InternalUser;
+    user: InternalUser | null;
     isAuthenticated: boolean;
 }
 
@@ -44,18 +44,15 @@ async function app() {
                 saveUninitialized: true,
             })
         )
-        .use((req, res, next) => {
+        .use(async (req, res, next) => {
             // get all user data
+            const user = await getUserByUuid({ db, uuid: req.session!.user });
             const context: Context = {
                 db,
-                user: req.session!.user,
-                isAuthenticated:
-                    req.session!.user !== undefined &&
-                    req.session!.user!.id !== undefined,
+                user,
+                isAuthenticated: req.session!.user !== null,
             };
-
             res.locals = context;
-
             next();
         });
 
