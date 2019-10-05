@@ -334,7 +334,8 @@ export async function setPasswordReset({
         DO
             UPDATE
             SET 
-                token=$2
+                token=$2,
+                created_at=NOW()
             WHERE
                 tokens.user_id=$1
         `;
@@ -360,7 +361,8 @@ export async function resetingPassword({
             users_tokens
         AS (
                 SELECT 
-                    users.id 
+                    users.id,
+                    tokens.created_at 
                 FROM 
                     users 
                 INNER JOIN 
@@ -382,6 +384,8 @@ export async function resetingPassword({
                     users_tokens.id
                 FROM
                     users_tokens
+                WHERE
+                    age(now(), users_tokens.created_at) < ('15 min'::interval)
             )
         RETURNING
             id,
@@ -394,12 +398,11 @@ export async function resetingPassword({
             created_at as "createdAt",
             confirmed
         `;
-
     try {
         const {
             rows: [user],
         } = await db.query(query, [token, uuid, await hash(password)]);
-
+        if (user === null) return null;
         return user || null;
     } catch (e) {
         console.error(e);

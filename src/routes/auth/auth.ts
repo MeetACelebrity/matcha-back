@@ -4,6 +4,7 @@ import setupSignUp from './sign-up';
 import setupSignIn from './sign-in';
 import setupConfirmation from './confirmation';
 import setupResetPassword from './reset-password';
+import { resetingPassword } from '../../models/user';
 
 export default function authRoutes(): Router {
     const router = Router();
@@ -16,7 +17,7 @@ export default function authRoutes(): Router {
 
     setupResetPassword(router);
 
-    router.get('/logout', req => {
+    router.get('/logout', (req, res) => {
         req.session!.destroy(console.error);
     });
 

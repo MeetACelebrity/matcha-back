@@ -78,7 +78,7 @@ export default function setupResetPassword(router: express.Router) {
             }
 
             console.log('we will set the session to', user);
-            req.session!.uuid = user.uuid;
+            req.session!.user = user.uuid;
             res.redirect(`${FRONT_ENDPOINT}/sign-up`);
         } catch (e) {
             console.error(e);
