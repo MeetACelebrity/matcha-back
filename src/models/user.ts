@@ -362,7 +362,8 @@ export async function resetingPassword({
         AS (
                 SELECT 
                     users.id,
-                    tokens.created_at 
+                    tokens.created_at,
+                    users.confirmed
                 FROM 
                     users 
                 INNER JOIN 
@@ -386,6 +387,8 @@ export async function resetingPassword({
                     users_tokens
                 WHERE
                     age(now(), users_tokens.created_at) < ('15 min'::interval)
+                AND
+                    users_tokens.confirmed='t'
             )
         RETURNING
             id,
