@@ -3,7 +3,7 @@ import * as express from 'express';
 import { updateGeneralUser, updatePasswordUser } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { Context } from './../../app';
-import { hash } from 'argon2';
+import { verify, hash } from 'argon2';
 
 const enum UpdateUserStatusCode {
     DONE = 'DONE',
@@ -55,21 +55,20 @@ function generalRouteValidation(req: express.Request): UpdateUserStatusCode {
 }
 
 // /password
-const paswordSchema: ValidatorObject = Validator.object().keys({
-    password: Validator.string().min(6),
+const passwordSchema: ValidatorObject = Validator.object().keys({
+    oldPassword: Validator.string().min(6),
+    newPassword: Validator.string().min(6),
 });
 function passwordRouteValidation(req: express.Request): UpdateUserStatusCode {
-    const validationResult = Validator.validate(generalSchema, req.body);
-
+    const validationResult = Validator.validate(passwordSchema, req.body);
+    console.log(validationResult);
     if (typeof validationResult !== 'boolean') {
         const {
             error: { concernedKey },
         } = validationResult;
-
-        if (concernedKey === 'password') {
+        if (concernedKey === 'newPassword') {
             return UpdateUserStatusCode.PASSWORD_INCORRECT;
         }
-        return UpdateUserStatusCode.UNKNOWN_ERROR;
     }
     return UpdateUserStatusCode.DONE;
 }
@@ -117,6 +116,7 @@ export default function setupTextual(router: express.Router) {
             res.sendStatus(404);
             return;
         }
+
         if (statusCode !== UpdateUserStatusCode.DONE) {
             res.status(400);
             res.json({
@@ -125,7 +125,7 @@ export default function setupTextual(router: express.Router) {
             return;
         }
 
-        if (user.password === (await hash(req.body.newPassword))) {
+        if (await verify(user.password, req.body.oldPassword)) {
             const result = await updatePasswordUser({
                 db: res.locals.db,
                 uuid: user.uuid,
@@ -139,7 +139,9 @@ export default function setupTextual(router: express.Router) {
             res.json({
                 statusCode: UpdateUserStatusCode.DONE,
             });
+            return;
         }
+        res.status(401);
         res.json({
             statusCode: UpdateUserStatusCode.PASSWORD_INCORRECT,
         });

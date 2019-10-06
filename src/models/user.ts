@@ -421,11 +421,11 @@ export async function updateGeneralUser({
         UPDATE
             users
         SET
-            email=$1,
-            given_name=$2
-            family_name=$3
+            email=$2,
+            given_name=$3,
+            family_name=$4
         WHERE
-            uuid=$4
+            uuid=$1
             `;
 
     try {
@@ -458,7 +458,10 @@ export async function updatePasswordUser({
         `;
 
     try {
-        const { rowCount } = await db.query(query, [uuid, newPassword]);
+        const { rowCount } = await db.query(query, [
+            uuid,
+            await hash(newPassword),
+        ]);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {
