@@ -6,7 +6,7 @@ CREATE TYPE "sexual_orientation" AS ENUM (
 
 CREATE TYPE "gender" AS ENUM (
   'MALE',
-  'FEMELE'
+  'FEMALE'
 );
 
 CREATE TYPE "token_type" AS ENUM (
@@ -43,7 +43,8 @@ CREATE TABLE "geolocalisations" (
 
 CREATE TABLE "extended_profiles" (
   "id" serial PRIMARY KEY,
-  "user_id" int NOT NULL,
+  "user_id" int UNIQUE NOT NULL,
+  "age" int NOT NULL DEFAULT 18,
   "gender" gender,
   "sexual_orientation" sexual_orientation DEFAULT 'BISEXUAL',
   "biography" text

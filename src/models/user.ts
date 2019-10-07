@@ -49,6 +49,25 @@ export interface UpdatePasswordUserArgs extends ModelArgs {
     uuid: string;
     newPassword: string;
 }
+
+export interface UpdateExtendedUserArgs extends ModelArgs {
+    uuid: string;
+    age: number;
+    gender: Gender;
+    sexualOrientation: SexualOrientation;
+}
+
+export enum Gender {
+    'MALE',
+    'FEMALE',
+}
+
+export enum SexualOrientation {
+    'HETEROSEXUAL',
+    'HOMOSEXUAL',
+    'BISEXUAL',
+}
+
 /**
  * An External User can be safely sent
  * to the client because it does not hold sensible data.
@@ -464,6 +483,82 @@ export async function updatePasswordUser({
         const { rowCount } = await db.query(query, [
             uuid,
             await hash(newPassword),
+        ]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateExtendedUser({
+    db,
+    uuid,
+    age,
+    gender,
+    sexualOrientation,
+}: UpdateExtendedUserArgs) {
+    const query = `
+        
+        WITH
+            id_user
+        AS
+        (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid=$1
+        ),
+            id_extended
+        AS
+        (
+            INSERT INTO
+                extended_profiles
+                (
+                    user_id,
+                    age,
+                    gender,
+                    sexual_orientation
+                )
+            VALUES
+                (
+                    (select id from id_user),
+                    $2,
+                    $3,
+                    $4
+                )
+            ON CONFLICT
+                (
+                    user_id
+                )
+            DO
+                UPDATE
+                SET
+                    age=$2,
+                    gender=$3,
+                    sexual_orientation=$4
+                WHERE
+                    extended_profiles.user_id=(select id from id_user)
+            RETURNING
+                id
+            )
+            UPDATE
+                users
+            SET
+                extended_profile=(select id from id_extended)
+            WHERE
+                id=(select id from id_user);
+            `;
+
+    try {
+        const { rowCount } = await db.query(query, [
+            uuid,
+            age,
+            gender,
+            sexualOrientation,
         ]);
         if (rowCount === 0) return null;
         return true;

@@ -1,6 +1,10 @@
 import * as express from 'express';
 
-import { updateGeneralUser, updatePasswordUser } from '../../models/user';
+import {
+    updateGeneralUser,
+    updatePasswordUser,
+    updateExtendedUser,
+} from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { Context } from './../../app';
 import { verify, hash } from 'argon2';
@@ -147,7 +151,32 @@ export default function setupTextual(router: express.Router) {
         });
     });
 
-    router.put('/extended', async (req, res) => {});
+    router.put('/extended', async (req, res) => {
+        const { user }: Context = res.locals;
+
+        if (user === null) {
+            res.sendStatus(404);
+            return;
+        }
+        // check info
+
+        // insert of update
+        const result = await updateExtendedUser({
+            db: res.locals.db,
+            uuid: user.uuid,
+            age: req.body.age,
+            gender: req.body.gender,
+            sexualOrientation: req.body.sexualOrientation,
+        });
+        if (result === null) {
+            res.status(404);
+            res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+            return;
+        }
+        res.json({
+            statusCode: UpdateUserStatusCode.DONE,
+        });
+    });
 
     router.put('/biography', async (req, res) => {});
 }
