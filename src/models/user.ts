@@ -62,6 +62,11 @@ export interface UpdateExtendedUserArgs extends ModelArgs {
     sexualOrientation: SexualOrientation;
 }
 
+export interface UpdateTagsArgs extends ModelArgs {
+    uuid: string;
+    tags: string;
+}
+
 export enum Gender {
     'MALE',
     'FEMALE',
@@ -634,6 +639,72 @@ export async function updateBiography({
     `;
     try {
         const { rowCount } = await db.query(query, [uuid, biography]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateTags({
+    db,
+    uuid,
+    tags,
+}: UpdateTagsArgs): Promise<true | null> {
+    const token = '0834f70b-8f15-4287-a2f5-80e51155c847';
+
+    const query = `
+        WITH
+            id_user
+        AS 
+        (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid=$1
+        ),
+            id_tag
+        AS
+        (
+            INSERT INTO
+                tags
+                (
+                    uuid,
+                    name
+                )
+            VALUES
+                (
+                    $3,
+                    $2
+                )
+            ON CONFLICT
+                (
+                    name
+                )
+            DO 
+                UPDATE 
+                SET 
+                    name=EXCLUDED.name 
+            RETURNING id;
+
+        )
+        INSERT INTO
+            users_tags
+            (
+                user_id,
+                tag_id
+            )
+        VALUES
+        (
+            (SELECT id FROM id_user),
+            (SELECT id FROM id_tag)
+        )
+        `;
+    try {
+        const { rowCount } = await db.query(query, [uuid, tags, token]);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {
