@@ -387,7 +387,8 @@ export async function resetingPassword({
                 SELECT 
                     users.id,
                     tokens.created_at,
-                    users.confirmed
+                    users.confirmed,
+                    tokens.id as token_id
                 FROM 
                     users 
                 INNER JOIN 
@@ -398,7 +399,14 @@ export async function resetingPassword({
                     token=$1
                 AND 
                     uuid=$2
-            )
+            ),
+            delete_token
+        AS (
+            DELETE FROM
+                tokens
+            WHERE
+                id=(select token_id from users_tokens)
+        )
         UPDATE
             users
         SET
