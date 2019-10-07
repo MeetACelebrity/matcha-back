@@ -4,6 +4,7 @@ import {
     updateGeneralUser,
     updatePasswordUser,
     updateExtendedUser,
+    updateBiography,
 } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { Context } from './../../app';
@@ -178,5 +179,30 @@ export default function setupTextual(router: express.Router) {
         });
     });
 
-    router.put('/biography', async (req, res) => {});
+    router.put('/biography', async (req, res) => {
+        const { user }: Context = res.locals;
+
+        if (user === null) {
+            res.sendStatus(404);
+            return;
+        }
+
+        // check info
+
+        // insert or update data
+
+        const result = await updateBiography({
+            db: res.locals.db,
+            uuid: user.uuid,
+            biography: req.body.biography,
+        });
+        if (result === null) {
+            res.status(404);
+            res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+            return;
+        }
+        res.json({
+            statusCode: UpdateUserStatusCode.DONE,
+        });
+    });
 }

@@ -50,6 +50,11 @@ export interface UpdatePasswordUserArgs extends ModelArgs {
     newPassword: string;
 }
 
+export interface UpdateBiographyArgs extends ModelArgs {
+    uuid: string;
+    biography: string;
+}
+
 export interface UpdateExtendedUserArgs extends ModelArgs {
     uuid: string;
     age: number;
@@ -498,9 +503,8 @@ export async function updateExtendedUser({
     age,
     gender,
     sexualOrientation,
-}: UpdateExtendedUserArgs) {
-    const query = `
-        
+}: UpdateExtendedUserArgs): Promise<true | null> {
+    const query = ` 
         WITH
             id_user
         AS
@@ -560,6 +564,68 @@ export async function updateExtendedUser({
             gender,
             sexualOrientation,
         ]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateBiography({
+    db,
+    uuid,
+    biography,
+}: UpdateBiographyArgs): Promise<true | null> {
+    const query = `
+        WITH
+            id_user
+        AS
+        (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid=$1
+        ),
+            id_extended
+        AS
+        (
+            INSERT INTO
+                extended_profiles
+                (
+                    user_id,
+                    biography
+                )
+            VALUES
+                (
+                    (select id from id_user),
+                    $2
+                )
+            ON CONFLICT
+                (
+                    user_id
+                )
+            DO
+                UPDATE
+                SET
+                    biography=$2
+                WHERE
+                    extended_profiles.user_id=(select id from id_user)
+            RETURNING
+                id
+        )
+        UPDATE
+            users
+        SET
+            extended_profile=(select id from id_extended)
+        WHERE
+            id=(select id from id_user);
+    
+    `;
+    try {
+        const { rowCount } = await db.query(query, [uuid, biography]);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {
