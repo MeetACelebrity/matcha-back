@@ -67,6 +67,17 @@ export interface UpdateTagsArgs extends ModelArgs {
     tags: string;
 }
 
+export interface UpdateAddressnArgs extends ModelArgs {
+    uuid: string;
+    lat: number;
+    long: number;
+    name: string;
+    administrative: string;
+    county: string;
+    country: string;
+    city: string;
+}
+
 export enum Gender {
     'MALE',
     'FEMALE',
@@ -717,6 +728,71 @@ export async function updateTags({
         `;
     try {
         const { rowCount } = await db.query(query, [guid, tags, token]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateAddress({
+    db,
+    uuid,
+    lat,
+    long,
+    name,
+    administrative,
+    county,
+    country,
+    city,
+}: UpdateAddressnArgs): Promise<true | null> {
+    const query = `
+        WITH
+            id_user
+        AS 
+        (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid=$1
+        )
+        INSERT INTO
+            addresses
+        (
+            point,
+            name,
+            administrative,
+            county,
+            country,
+            city,
+            user_id
+        )
+        SELECT
+            ($2, $3),
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            id
+        FROM
+            id_user
+    `;
+
+    try {
+        const { rowCount } = await db.query(query, [
+            uuid,
+            lat,
+            long,
+            name,
+            administrative,
+            county,
+            country,
+            city,
+        ]);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {

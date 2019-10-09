@@ -6,6 +6,7 @@ import {
     updateExtendedUser,
     updateBiography,
     updateTags,
+    updateAddress,
 } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { Context } from './../../app';
@@ -292,6 +293,36 @@ export default function setupTextual(router: express.Router) {
         });
         if (result === null) {
             res.status(404);
+            res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+            return;
+        }
+        res.json({
+            statusCode: UpdateUserStatusCode.DONE,
+        });
+    });
+
+    router.put('/address', async (req, res) => {
+        const { user }: Context = res.locals;
+
+        if (user === null) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const result = await updateAddress({
+            db: res.locals.db,
+            uuid: user.uuid,
+            lat: req.body.lat,
+            long: req.body.long,
+            name: req.body.name,
+            administrative: req.body.administrative,
+            county: req.body.county,
+            country: req.body.country,
+            city: req.body.city,
+        });
+        if (result === null) {
+            res.status(404);
+            console.log('result null');
             res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
             return;
         }

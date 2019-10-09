@@ -4,7 +4,6 @@ import setupSignUp from './sign-up';
 import setupSignIn from './sign-in';
 import setupConfirmation from './confirmation';
 import setupResetPassword from './reset-password';
-import { resetingPassword } from '../../models/user';
 
 export default function authRoutes(): Router {
     const router = Router();
