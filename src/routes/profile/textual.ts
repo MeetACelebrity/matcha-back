@@ -20,6 +20,7 @@ const enum UpdateUserStatusCode {
     AGE_INCORRECT = 'AGE_INCORRECT',
     GENDER_INCORRECT = 'GENDER_INCORRECT',
     SEXUAL_ORIENTATION_INCORRECT = 'SEXUAL_ORIENTATION_INCORRECT',
+    BIOGRAPHY_INCORRECT = 'BIOGRAPHY_INCORRECT',
 
     INCORRECT_FIELD = 'INCORRECT_FIELD',
     PASSWORD_INCORRECT = 'PASSWORD_INCORRECT',
@@ -113,11 +114,24 @@ function extendedRouteValidation(req: express.Request): UpdateUserStatusCode {
 }
 
 // /biography
-// const biographySchema: ValidatorObject = Validator.object().keys({
-//     biography: Validator.string()
-//         .min(1)
-//         .max(255),
-// });
+const biographySchema: ValidatorObject = Validator.object().keys({
+    biography: Validator.string()
+        .min(1)
+        .max(255),
+});
+
+function biographyRouteValidation(req: express.Request): UpdateUserStatusCode {
+    const validationResult = Validator.validate(biographySchema, req.body);
+    if (typeof validationResult !== 'boolean') {
+        const {
+            error: { concernedKey },
+        } = validationResult;
+        if (concernedKey === 'biography') {
+            return UpdateUserStatusCode.BIOGRAPHY_INCORRECT;
+        }
+    }
+    return UpdateUserStatusCode.DONE;
+}
 
 export default function setupTextual(router: express.Router) {
     router.put('/general', async (req, res) => {
@@ -202,11 +216,11 @@ export default function setupTextual(router: express.Router) {
             return;
         }
         if (statusCode !== UpdateUserStatusCode.DONE) {
+            res.status(400);
             console.log(statusCode);
             res.json({
                 statusCode,
             });
-            res.status(400);
             return;
         }
 
@@ -230,16 +244,20 @@ export default function setupTextual(router: express.Router) {
 
     router.put('/biography', async (req, res) => {
         const { user }: Context = res.locals;
+        const statusCode = biographyRouteValidation(req);
 
         if (user === null) {
             res.sendStatus(404);
             return;
         }
 
-        // check info
-
-        // insert or update data
-
+        if (statusCode !== UpdateUserStatusCode.DONE) {
+            res.status(400);
+            res.json({
+                statusCode,
+            });
+            return;
+        }
         const result = await updateBiography({
             db: res.locals.db,
             uuid: user.uuid,
