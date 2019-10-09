@@ -204,13 +204,6 @@ export class ValidatorPrimitive<T> {
                 return false;
         }
 
-        console.log(
-            'authorizedValues',
-            this.authorizedValues,
-            value,
-            this.authorizedValues && this.authorizedValues.includes(value)
-        );
-
         if (this.authorizedValues === null) return true;
 
         if (!this.authorizedValues.includes(value)) {
