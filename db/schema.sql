@@ -35,8 +35,14 @@ CREATE TABLE "users" (
   "confirmed" bool NOT NULL DEFAULT false
 );
 
-CREATE TABLE "geolocalisations" (
+CREATE TABLE "addresses" (
+  "id" serial PRIMARY KEY,
   "point" point NOT NULL,
+  "name" text NOT NULL,
+  "administrative" text NOT NULL,
+  "county" text NOT NULL,
+  "city" text NOT NULL,
+  "country" text NOT NULL,
   "user_id" int NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
@@ -129,7 +135,7 @@ CREATE TABLE "matches" (
 
 ALTER TABLE "users" ADD FOREIGN KEY ("extended_profile") REFERENCES "extended_profiles" ("id");
 
-ALTER TABLE "geolocalisations" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "addresses" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
 ALTER TABLE "extended_profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 

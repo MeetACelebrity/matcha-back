@@ -410,7 +410,9 @@ export async function resetingPassword({
             DELETE FROM
                 tokens
             WHERE
-                id=(select token_id from users_tokens)
+                id=(
+                    SELECT token_id FROM users_tokens
+                )
         )
         UPDATE
             users
@@ -542,7 +544,7 @@ export async function updateExtendedUser({
                 )
             VALUES
                 (
-                    (select id from id_user),
+                    (SELECT id FROM id_user),
                     $2,
                     $3,
                     $4
@@ -558,7 +560,9 @@ export async function updateExtendedUser({
                     gender=$3,
                     sexual_orientation=$4
                 WHERE
-                    extended_profiles.user_id=(select id from id_user)
+                    extended_profiles.user_id=(
+                        SELECT id FROM id_user
+                    )
             RETURNING
                 id
             )
@@ -567,7 +571,9 @@ export async function updateExtendedUser({
             SET
                 extended_profile=(select id from id_extended)
             WHERE
-                id=(select id from id_user);
+                id=(
+                    SELECT id FROM id_user
+                );
             `;
 
     try {
@@ -613,7 +619,7 @@ export async function updateBiography({
                 )
             VALUES
                 (
-                    (select id from id_user),
+                    (SELECT id FROM id_user),
                     $2
                 )
             ON CONFLICT
@@ -625,16 +631,22 @@ export async function updateBiography({
                 SET
                     biography=$2
                 WHERE
-                    extended_profiles.user_id=(select id from id_user)
+                    extended_profiles.user_id = (
+                        SELECT id FROM id_user
+                    )
             RETURNING
                 id
         )
         UPDATE
             users
         SET
-            extended_profile=(select id from id_extended)
+            extended_profile = (
+                SELECT id FROM id_extended
+            )
         WHERE
-            id=(select id from id_user);
+            id = ( 
+                SELECT id FROM id_user
+            );
     
     `;
     try {
@@ -649,10 +661,10 @@ export async function updateBiography({
 
 export async function updateTags({
     db,
-    uuid,
+    uuid: guid,
     tags,
 }: UpdateTagsArgs): Promise<true | null> {
-    const token = '0834f70b-8f15-4287-a2f5-80e51155c847';
+    const token = uuid();
 
     const query = `
         WITH
@@ -688,7 +700,7 @@ export async function updateTags({
                 UPDATE 
                 SET 
                     name=EXCLUDED.name 
-            RETURNING id;
+            RETURNING id
 
         )
         INSERT INTO
@@ -697,14 +709,14 @@ export async function updateTags({
                 user_id,
                 tag_id
             )
-        VALUES
-        (
-            (SELECT id FROM id_user),
-            (SELECT id FROM id_tag)
-        )
+        SELECT 
+            id_user.id,
+            id_tag.id
+        FROM
+            id_user, id_tag
         `;
     try {
-        const { rowCount } = await db.query(query, [uuid, tags, token]);
+        const { rowCount } = await db.query(query, [guid, tags, token]);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {

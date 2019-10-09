@@ -17,6 +17,9 @@ const enum UpdateUserStatusCode {
     USERNAME_INCORRECT = 'USERNAME_INCORRECT',
     GIVEN_NAME_INCORRECT = 'GIVEN_NAME_INCORRECT',
     FAMILY_NAME_INCORRECT = 'FAMILY_NAME_INCORRECT',
+    AGE_INCORRECT = 'AGE_INCORRECT',
+    GENDER_INCORRECT = 'GENDER_INCORRECT',
+    SEXUAL_ORIENTATION_INCORRECT = 'SEXUAL_ORIENTATION_INCORRECT',
 
     INCORRECT_FIELD = 'INCORRECT_FIELD',
     PASSWORD_INCORRECT = 'PASSWORD_INCORRECT',
@@ -34,7 +37,6 @@ const generalSchema: ValidatorObject = Validator.object().keys({
     givenName: stringSchema,
     familyName: stringSchema,
 });
-
 function generalRouteValidation(req: express.Request): UpdateUserStatusCode {
     const validationResult = Validator.validate(generalSchema, req.body);
 
@@ -78,6 +80,44 @@ function passwordRouteValidation(req: express.Request): UpdateUserStatusCode {
     }
     return UpdateUserStatusCode.DONE;
 }
+
+// /extended age, genrem sexualOrientation
+const extendedSchema: ValidatorObject = Validator.object().keys({
+    age: Validator.number()
+        .min(18)
+        .max(100),
+    gender: Validator.string().whitelist(['MALE', 'FEMALE']),
+    sexualOrientation: Validator.string().whitelist([
+        'HETEROSEXUAL',
+        'HOMOSEXUAL',
+        'BISEXUAL',
+    ]),
+});
+function extendedRouteValidation(req: express.Request): UpdateUserStatusCode {
+    const validationResult = Validator.validate(extendedSchema, req.body);
+    if (typeof validationResult !== 'boolean') {
+        const {
+            error: { concernedKey },
+        } = validationResult;
+
+        switch (concernedKey) {
+            case 'age':
+                return UpdateUserStatusCode.AGE_INCORRECT;
+            case 'gender':
+                return UpdateUserStatusCode.GENDER_INCORRECT;
+            case 'sexualOrientation':
+                return UpdateUserStatusCode.SEXUAL_ORIENTATION_INCORRECT;
+        }
+    }
+    return UpdateUserStatusCode.DONE;
+}
+
+// /biography
+// const biographySchema: ValidatorObject = Validator.object().keys({
+//     biography: Validator.string()
+//         .min(1)
+//         .max(255),
+// });
 
 export default function setupTextual(router: express.Router) {
     router.put('/general', async (req, res) => {
@@ -155,12 +195,20 @@ export default function setupTextual(router: express.Router) {
 
     router.put('/extended', async (req, res) => {
         const { user }: Context = res.locals;
+        const statusCode = extendedRouteValidation(req);
 
         if (user === null) {
             res.sendStatus(404);
             return;
         }
-        // check info
+        if (statusCode !== UpdateUserStatusCode.DONE) {
+            console.log(statusCode);
+            res.json({
+                statusCode,
+            });
+            res.status(400);
+            return;
+        }
 
         // insert of update
         const result = await updateExtendedUser({
