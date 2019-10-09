@@ -4,7 +4,7 @@ const schema = Validator.object().keys({
     a: Validator.object().keys({
         b: Validator.object().keys({
             c: Validator.object().keys({
-                d: Validator.string().email(),
+                d: Validator.string(),
             }),
         }),
     }),
@@ -14,7 +14,7 @@ const schema = Validator.object().keys({
     b: Validator.object().keys({
         c: Validator.string(),
         d: Validator.object().keys({
-            lol: Validator.number(),
+            lol: Validator.number().whitelist([3, 2, 1]),
         }),
     }),
 });

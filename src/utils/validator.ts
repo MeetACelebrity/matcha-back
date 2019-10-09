@@ -49,6 +49,8 @@ export enum InvalidValueErrors {
     NOT_AN_INTEGER = 'NOT_AN_INTEGER',
     NOT_A_NEGATIVE_NUMBER = 'NOT_A_NEGATIVE_NUMBER',
     NOT_A_POSITIVE_NUMBER = 'NOT_A_POSITIVE_NUMBER',
+
+    NOT_AUTHORIZED_VALUE = 'NOT_AUTHORIZED_VALUE',
 }
 
 export class ValidatorError extends Error {
@@ -81,7 +83,10 @@ export class ValidatorError extends Error {
     }
 }
 
-type ValidatorClasses = ValidatorPrimitive | ValidatorObject | ValidatorArray;
+type ValidatorClasses =
+    | ValidatorPrimitive<any>
+    | ValidatorObject
+    | ValidatorArray;
 
 interface Modifier {
     (obj: { [key: string]: any }, key: string): void;
@@ -106,15 +111,15 @@ export class Validator {
         return new ValidatorNumber();
     }
 
-    static boolean(): ValidatorPrimitive {
+    static boolean(): ValidatorPrimitive<boolean> {
         return new ValidatorPrimitive(Types.BOOLEAN);
     }
 
-    static undefined(): ValidatorPrimitive {
+    static undefined(): ValidatorPrimitive<undefined> {
         return new ValidatorPrimitive(Types.UNDEFINED);
     }
 
-    static null(): ValidatorPrimitive {
+    static null(): ValidatorPrimitive<null> {
         return new ValidatorPrimitive(Types.NULL);
     }
 
@@ -147,16 +152,23 @@ export class Validator {
     }
 }
 
-export class ValidatorPrimitive {
+export class ValidatorPrimitive<T> {
     [VALIDATOR]: Types;
     private types: Types;
     protected constraints: Constraints = Constraints.NONE;
+    private authorizedValues: null | T[] = null;
 
     protected modifiers: Modifier[] = [];
 
     constructor(types: Types) {
         this[VALIDATOR] = types;
         this.types = types;
+    }
+
+    whitelist(authorized: T[]): this {
+        this.authorizedValues = authorized;
+
+        return this;
     }
 
     valid(value: any): boolean {
@@ -192,6 +204,19 @@ export class ValidatorPrimitive {
                 return false;
         }
 
+        console.log(
+            'authorizedValues',
+            this.authorizedValues,
+            value,
+            this.authorizedValues && this.authorizedValues.includes(value)
+        );
+
+        if (this.authorizedValues === null) return true;
+
+        if (!this.authorizedValues.includes(value)) {
+            throw new ValidatorError(InvalidValueErrors.NOT_AUTHORIZED_VALUE);
+        }
+
         return true;
     }
 
@@ -200,7 +225,7 @@ export class ValidatorPrimitive {
     }
 }
 
-export class ValidatorString extends ValidatorPrimitive {
+export class ValidatorString extends ValidatorPrimitive<string> {
     private minLength: number = 0;
     private maxLength: number = +Infinity;
     private emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -213,7 +238,7 @@ export class ValidatorString extends ValidatorPrimitive {
     /**
      * Add a valid email constraint.
      */
-    email(): ValidatorString {
+    email(): this {
         this.constraints |= Constraints.EMAIL;
 
         return this;
@@ -223,7 +248,7 @@ export class ValidatorString extends ValidatorPrimitive {
      * Add a minimal string length constraint
      * @param length The minimal length the string can have, included.
      */
-    min(length: number): ValidatorString {
+    min(length: number): this {
         this.minLength = length;
         this.constraints |= Constraints.MIN;
 
@@ -234,20 +259,20 @@ export class ValidatorString extends ValidatorPrimitive {
      * Add a maximum string length constraint
      * @param length The maximum length the string can have, exempt.
      */
-    max(length: number): ValidatorString {
+    max(length: number): this {
         this.maxLength = length;
         this.constraints |= Constraints.MAX;
 
         return this;
     }
 
-    alphanum(): ValidatorString {
+    alphanum(): this {
         this.constraints |= Constraints.ALPHANUM;
 
         return this;
     }
 
-    uppercase(enabled = true) {
+    uppercase(enabled = true): this {
         if ((this.constraints & Constraints.UPPERCASE) !== 0) return this;
 
         if (enabled) {
@@ -261,7 +286,7 @@ export class ValidatorString extends ValidatorPrimitive {
         return this;
     }
 
-    lowercase(enabled = true) {
+    lowercase(enabled = true): this {
         if ((this.constraints & Constraints.LOWERCASE) !== 0) return this;
 
         if (enabled) {
@@ -275,7 +300,7 @@ export class ValidatorString extends ValidatorPrimitive {
         return this;
     }
 
-    trim(enabled = true) {
+    trim(enabled = true): this {
         if ((this.constraints & Constraints.TRIM) !== 0) return this;
 
         if (enabled) {
@@ -344,7 +369,7 @@ export class ValidatorString extends ValidatorPrimitive {
     }
 }
 
-export class ValidatorNumber extends ValidatorPrimitive {
+export class ValidatorNumber extends ValidatorPrimitive<number> {
     private minNumber: number = -1;
     private maxNumber: number = -1;
 
@@ -352,40 +377,40 @@ export class ValidatorNumber extends ValidatorPrimitive {
         super(Types.NUMBER);
     }
 
-    integer(): ValidatorNumber {
+    integer(): this {
         this.constraints |= Constraints.INTEGER;
 
         return this;
     }
 
-    negative(): ValidatorNumber {
+    negative(): this {
         this.constraints |= Constraints.NEGATIVE;
 
         return this;
     }
 
-    positive(): ValidatorNumber {
+    positive(): this {
         this.constraints |= Constraints.POSITIVE;
 
         return this;
     }
 
-    less(num: number): ValidatorNumber {
+    less(num: number): this {
         return this.max(num);
     }
 
-    greater(num: number): ValidatorNumber {
+    greater(num: number): this {
         return this.min(num);
     }
 
-    max(num: number): ValidatorNumber {
+    max(num: number): this {
         this.maxNumber = num;
         this.constraints |= Constraints.MAX;
 
         return this;
     }
 
-    min(num: number): ValidatorNumber {
+    min(num: number): this {
         this.minNumber = num;
         this.constraints |= Constraints.MIN;
 
@@ -442,7 +467,7 @@ export class ValidatorObject {
         return [null, true];
     }
 
-    keys(keys: ValidatorClassesObject): ValidatorObject {
+    keys(keys: ValidatorClassesObject): this {
         const [incorrectKey, result] = this.keysValid(keys);
         if (!result) {
             throw new Error(`The key ${incorrectKey} is incorrect !`);
@@ -485,7 +510,7 @@ export class ValidatorArray {
     [VALIDATOR] = Types.ARRAY;
     innerArray: any[] = [];
 
-    only(acceptedValues: any[]): ValidatorArray {
+    only(acceptedValues: any[]): this {
         this.innerArray = acceptedValues;
 
         return this;
