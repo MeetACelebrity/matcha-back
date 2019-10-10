@@ -771,7 +771,7 @@ export async function updateAddress({
             user_id
         )
         SELECT
-            ($2, $3),
+            POINT($2, $3),
             $4,
             $5,
             $6,
@@ -780,6 +780,23 @@ export async function updateAddress({
             id
         FROM
             id_user
+        ON CONFLICT (
+            user_id
+        )
+        DO
+            UPDATE
+            SET
+                point = POINT($2, $3),
+                name = $4,
+                administrative = $5,
+                county = $6,
+                country = $7,
+                city = $8
+            WHERE
+                addresses.user_id= (
+                    SELECT id FROM id_user
+                )
+            
     `;
 
     try {

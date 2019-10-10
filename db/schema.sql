@@ -24,11 +24,11 @@ CREATE TYPE "notification_type" AS ENUM (
 
 CREATE TABLE "users" (
   "id" serial PRIMARY KEY,
-  "uuid" uuid UNIQUE NOT NULL,
+  "uuid" uuid NOT NULL,
   "given_name" text NOT NULL,
   "family_name" text NOT NULL,
-  "username" text UNIQUE NOT NULL,
-  "email" text UNIQUE NOT NULL,
+  "username" text NOT NULL,
+  "email" text NOT NULL,
   "password" text NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   "extended_profile" int,
@@ -49,7 +49,7 @@ CREATE TABLE "addresses" (
 
 CREATE TABLE "extended_profiles" (
   "id" serial PRIMARY KEY,
-  "user_id" int UNIQUE NOT NULL,
+  "user_id" int NOT NULL,
   "age" int NOT NULL DEFAULT 18,
   "gender" gender,
   "sexual_orientation" sexual_orientation DEFAULT 'BISEXUAL',
@@ -65,13 +65,13 @@ CREATE TABLE "profile_pictures" (
 
 CREATE TABLE "images" (
   "id" serial PRIMARY KEY,
-  "uuid" text UNIQUE NOT NULL,
+  "uuid" text NOT NULL,
   "path" text NOT NULL
 );
 
 CREATE TABLE "tokens" (
   "id" serial PRIMARY KEY,
-  "token" uuid UNIQUE NOT NULL,
+  "token" uuid NOT NULL,
   "user_id" int NOT NULL,
   "type" token_type NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
@@ -92,7 +92,7 @@ CREATE TABLE "visits" (
 
 CREATE TABLE "messages" (
   "id" serial PRIMARY KEY,
-  "uuid" uuid UNIQUE NOT NULL,
+  "uuid" uuid NOT NULL,
   "author_id" int NOT NULL,
   "conversation_id" int NOT NULL,
   "payload" text NOT NULL
@@ -100,7 +100,7 @@ CREATE TABLE "messages" (
 
 CREATE TABLE "conversations" (
   "id" serial PRIMARY KEY,
-  "uuid" uuid UNIQUE NOT NULL,
+  "uuid" uuid NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
@@ -111,7 +111,7 @@ CREATE TABLE "conversations_users" (
 
 CREATE TABLE "notifications" (
   "id" serial PRIMARY KEY,
-  "uuid" uuid UNIQUE NOT NULL,
+  "uuid" uuid NOT NULL,
   "type" notification_type NOT NULL,
   "notified_user_id" int NOT NULL,
   "notifier_user_id" int NOT NULL
@@ -119,8 +119,8 @@ CREATE TABLE "notifications" (
 
 CREATE TABLE "tags" (
   "id" serial PRIMARY KEY,
-  "uuid" uuid UNIQUE NOT NULL,
-  "name" text UNIQUE NOT NULL
+  "uuid" uuid NOT NULL,
+  "name" text NOT NULL
 );
 
 CREATE TABLE "users_tags" (
@@ -173,13 +173,37 @@ ALTER TABLE "matches" ADD FOREIGN KEY ("a") REFERENCES "users" ("id");
 
 ALTER TABLE "matches" ADD FOREIGN KEY ("b") REFERENCES "users" ("id");
 
+CREATE UNIQUE INDEX ON "users" ("uuid");
+
+CREATE UNIQUE INDEX ON "users" ("username");
+
+CREATE UNIQUE INDEX ON "users" ("email");
+
+CREATE UNIQUE INDEX ON "addresses" ("user_id");
+
+CREATE UNIQUE INDEX ON "extended_profiles" ("user_id");
+
+CREATE UNIQUE INDEX ON "images" ("uuid");
+
 CREATE UNIQUE INDEX ON "tokens" ("user_id", "type");
+
+CREATE UNIQUE INDEX ON "tokens" ("token");
 
 CREATE UNIQUE INDEX ON "likes" ("liker", "liked");
 
 CREATE INDEX ON "visits" ("visitor", "visited");
 
+CREATE UNIQUE INDEX ON "messages" ("uuid");
+
+CREATE UNIQUE INDEX ON "conversations" ("uuid");
+
 CREATE UNIQUE INDEX ON "conversations_users" ("user_id", "conversation_id");
+
+CREATE UNIQUE INDEX ON "notifications" ("uuid");
+
+CREATE UNIQUE INDEX ON "tags" ("uuid");
+
+CREATE UNIQUE INDEX ON "tags" ("name");
 
 CREATE UNIQUE INDEX ON "users_tags" ("tag_id", "user_id");
 
