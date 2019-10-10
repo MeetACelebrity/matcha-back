@@ -1,13 +1,13 @@
 import { Router, Request } from 'express';
 
 import setupTextual from './textual';
+import setupUpload from './upload';
 
 export default function profileRoutes(): Router {
     const router = Router();
 
-    // text info
     setupTextual(router);
-    // images --> profile and other
+    setupUpload(router);
 
     return router;
 }

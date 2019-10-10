@@ -6,10 +6,12 @@ import cors from 'cors';
 
 import routes from './routes';
 import { Database } from './database';
+import { Cloud } from './cloud';
 import { InternalUser, getUserByUuid } from './models/user';
 
 export interface Context {
     db: Database;
+    cloud: Cloud;
     user: InternalUser | null;
     isAuthenticated: boolean;
 }
@@ -22,6 +24,7 @@ async function app() {
     const server = express();
 
     const db = new Database();
+    const cloud = new Cloud();
 
     server
         .use(
@@ -49,6 +52,7 @@ async function app() {
             const user = await getUserByUuid({ db, uuid: req.session!.user });
             const context: Context = {
                 db,
+                cloud,
                 user,
                 isAuthenticated: req.session!.user !== null,
             };

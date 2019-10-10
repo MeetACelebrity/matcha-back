@@ -14,12 +14,14 @@
         "express": "^4.17.1",
         "express-session": "^1.16.2",
         "heml": "^1.1.3",
+        "minio": "^7.0.12",
         "nodemailer": "^6.3.0",
         "pg": "^7.12.1",
         "uuid": "^3.3.3"
     },
     "devDependencies": {
         "@types/express": "^4.17.1",
+        "@types/minio": "^7.0.3",
         "@types/node": "^12.7.11",
         "@types/nodemailer": "^6.2.1",
         "cz-conventional-changelog": "^3.0.2",
@@ -40,6 +42,7 @@
         "prebuild": "docker build . -t 'db'",
         "build": "tsc",
         "setup:database": "docker rm -f database ; docker run -d -p 35432:5432 --name database db",
+        "setup:cloud": "docker run -it -d -p 9000:9000 --env-file .env minio/minio server /data",
         "lint": "tslint --fix --project tsconfig.json -t codeFrame 'src/**/*.ts'"
     },
     "repository": {
