@@ -9,11 +9,13 @@ const enum UploadPicsStatusCode {
 
 export default function setupUpload(router: express.Router) {
     router.put('/profile-pics', async (req, res) => {
-        console.log('uploding your pics');
-        // upload pics
+        const cloud = res.locals.cloud;
 
-        // if upload is done
-        // insert url in db
+        // upload a new picture
+
+        // get address of it
+
+        // save addresse, user_id, img type (profile pics or other pics) in db
 
         res.json({
             statusCode: UploadPicsStatusCode.DONE,

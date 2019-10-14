@@ -1,0 +1,34 @@
+version: '3.4'
+services:
+    database:
+        build: .
+        ports:
+            - '${DATABASE_PORT}:5432'
+        restart: on-failure
+
+    cloud:
+        image: minio/minio
+        ports:
+            - '${CLOUD_PORT}:${CLOUD_PORT}'
+        env_file:
+            - .env
+        command: server /data
+
+    setupCloud:
+        image: minio/mc
+        depends_on:
+            - cloud
+        entrypoint: >
+            /bin/sh -c '
+                echo Waiting for minio service to start...;
+                while ! nc -z ${CLOUD_HOST} ${CLOUD_PORT};
+                do
+                    sleep 1;
+                done;
+                echo Connected!;
+                sleep 4;
+                /usr/bin/mc config host add cloud http://${CLOUD_HOST}:${CLOUD_PORT} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+                /usr/bin/mc mb cloud/profile-pics;
+                /usr/bin/mc policy set public cloud/profile-pics 
+                exit 0;
+            '
