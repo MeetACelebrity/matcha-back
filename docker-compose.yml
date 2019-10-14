@@ -9,7 +9,7 @@ services:
     cloud:
         image: minio/minio
         ports:
-            - '${CLOUD_PORT}:${CLOUD_PORT}'
+            - '${CLOUD_PORT}:9000'
         env_file:
             - .env
         command: server /data
