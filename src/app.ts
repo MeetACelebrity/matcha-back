@@ -3,6 +3,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import session from 'express-session';
 import cors from 'cors';
+import fileUpload from 'express-fileupload';
 
 import routes from './routes';
 import { Database } from './database';
@@ -47,6 +48,7 @@ async function app() {
                 saveUninitialized: true,
             })
         )
+        .use(fileUpload())
         .use(async (req, res, next) => {
             // get all user data
             const user = await getUserByUuid({ db, uuid: req.session!.user });

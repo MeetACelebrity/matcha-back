@@ -136,61 +136,113 @@ function biographyRouteValidation(req: express.Request): UpdateUserStatusCode {
 
 export default function setupTextual(router: express.Router) {
     router.put('/general', async (req, res) => {
-        const { user }: Context = res.locals;
-        const statusCode = generalRouteValidation(req);
+        try {
+            const { user }: Context = res.locals;
+            const statusCode = generalRouteValidation(req);
 
-        if (user === null) {
-            res.sendStatus(404);
-            return;
-        }
-        if (statusCode !== UpdateUserStatusCode.DONE) {
-            res.status(400);
-            res.json({
-                statusCode,
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            if (statusCode !== UpdateUserStatusCode.DONE) {
+                res.status(400);
+                res.json({
+                    statusCode,
+                });
+                return;
+            }
+
+            const result = await updateGeneralUser({
+                db: res.locals.db,
+                uuid: user.uuid,
+                email: req.body.email,
+                givenName: req.body.givenName,
+                familyName: req.body.familyName,
             });
-            return;
-        }
 
-        const result = await updateGeneralUser({
-            db: res.locals.db,
-            uuid: user.uuid,
-            email: req.body.email,
-            givenName: req.body.givenName,
-            familyName: req.body.familyName,
-        });
-
-        if (result === null) {
-            res.status(404);
-            res.json({ statusCode: UpdateUserStatusCode.INCORRECT_FIELD });
-            return;
+            if (result === null) {
+                res.status(404);
+                res.json({ statusCode: UpdateUserStatusCode.INCORRECT_FIELD });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
         }
-        res.json({
-            statusCode: UpdateUserStatusCode.DONE,
-        });
     });
 
     router.put('/password', async (req, res) => {
-        const { user }: Context = res.locals;
-        const statusCode = passwordRouteValidation(req);
+        try {
+            const { user }: Context = res.locals;
+            const statusCode = passwordRouteValidation(req);
 
-        if (user === null) {
-            res.sendStatus(404);
-            return;
-        }
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
 
-        if (statusCode !== UpdateUserStatusCode.DONE) {
-            res.status(400);
+            if (statusCode !== UpdateUserStatusCode.DONE) {
+                res.status(400);
+                res.json({
+                    statusCode,
+                });
+                return;
+            }
+
+            if (await verify(user.password, req.body.oldPassword)) {
+                const result = await updatePasswordUser({
+                    db: res.locals.db,
+                    uuid: user.uuid,
+                    newPassword: req.body.newPassword,
+                });
+                if (result === null) {
+                    res.status(404);
+                    res.json({
+                        statusCode: UpdateUserStatusCode.UNKNOWN_ERROR,
+                    });
+                    return;
+                }
+                res.json({
+                    statusCode: UpdateUserStatusCode.DONE,
+                });
+                return;
+            }
+            res.status(401);
             res.json({
-                statusCode,
+                statusCode: UpdateUserStatusCode.PASSWORD_INCORRECT,
             });
-            return;
+        } catch (e) {
+            console.error(e);
         }
+    });
 
-        if (await verify(user.password, req.body.oldPassword)) {
-            const result = await updatePasswordUser({
+    router.put('/extended', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+            const statusCode = extendedRouteValidation(req);
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            if (statusCode !== UpdateUserStatusCode.DONE) {
+                res.status(400);
+                console.log(statusCode);
+                res.json({
+                    statusCode,
+                });
+                return;
+            }
+
+            // insert of update
+            const result = await updateExtendedUser({
                 db: res.locals.db,
                 uuid: user.uuid,
-                newPassword: req.body.newPassword,
+                age: req.body.age,
+                gender: req.body.gender,
+                sexualOrientation: req.body.sexualOrientation,
             });
             if (result === null) {
                 res.status(404);
@@ -200,134 +252,108 @@ export default function setupTextual(router: express.Router) {
             res.json({
                 statusCode: UpdateUserStatusCode.DONE,
             });
-            return;
+        } catch (e) {
+            console.error(e);
         }
-        res.status(401);
-        res.json({
-            statusCode: UpdateUserStatusCode.PASSWORD_INCORRECT,
-        });
-    });
-
-    router.put('/extended', async (req, res) => {
-        const { user }: Context = res.locals;
-        const statusCode = extendedRouteValidation(req);
-
-        if (user === null) {
-            res.sendStatus(404);
-            return;
-        }
-        if (statusCode !== UpdateUserStatusCode.DONE) {
-            res.status(400);
-            console.log(statusCode);
-            res.json({
-                statusCode,
-            });
-            return;
-        }
-
-        // insert of update
-        const result = await updateExtendedUser({
-            db: res.locals.db,
-            uuid: user.uuid,
-            age: req.body.age,
-            gender: req.body.gender,
-            sexualOrientation: req.body.sexualOrientation,
-        });
-        if (result === null) {
-            res.status(404);
-            res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
-            return;
-        }
-        res.json({
-            statusCode: UpdateUserStatusCode.DONE,
-        });
     });
 
     router.put('/biography', async (req, res) => {
-        const { user }: Context = res.locals;
-        const statusCode = biographyRouteValidation(req);
+        try {
+            const { user }: Context = res.locals;
+            const statusCode = biographyRouteValidation(req);
 
-        if (user === null) {
-            res.sendStatus(404);
-            return;
-        }
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
 
-        if (statusCode !== UpdateUserStatusCode.DONE) {
-            res.status(400);
-            res.json({
-                statusCode,
+            if (statusCode !== UpdateUserStatusCode.DONE) {
+                res.status(400);
+                res.json({
+                    statusCode,
+                });
+                return;
+            }
+            const result = await updateBiography({
+                db: res.locals.db,
+                uuid: user.uuid,
+                biography: req.body.biography,
             });
-            return;
+            if (result === null) {
+                res.status(404);
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
         }
-        const result = await updateBiography({
-            db: res.locals.db,
-            uuid: user.uuid,
-            biography: req.body.biography,
-        });
-        if (result === null) {
-            res.status(404);
-            res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
-            return;
-        }
-        res.json({
-            statusCode: UpdateUserStatusCode.DONE,
-        });
     });
 
     router.put('/tags', async (req, res) => {
-        const { user }: Context = res.locals;
+        try {
+            const { user }: Context = res.locals;
 
-        if (user === null) {
-            res.sendStatus(404);
-            return;
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+
+            // check info
+
+            // insert or update data
+
+            const result = await updateTags({
+                db: res.locals.db,
+                uuid: user.uuid,
+                tags: req.body.tags,
+            });
+            if (result === null) {
+                res.status(404);
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
         }
-
-        // check info
-
-        // insert or update data
-
-        const result = await updateTags({
-            db: res.locals.db,
-            uuid: user.uuid,
-            tags: req.body.tags,
-        });
-        if (result === null) {
-            res.status(404);
-            res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
-            return;
-        }
-        res.json({
-            statusCode: UpdateUserStatusCode.DONE,
-        });
     });
 
     router.put('/address', async (req, res) => {
-        const { user }: Context = res.locals;
+        try {
+            const { user }: Context = res.locals;
 
-        if (user === null) {
-            res.sendStatus(404);
-            return;
-        }
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
 
-        const result = await updateAddress({
-            db: res.locals.db,
-            uuid: user.uuid,
-            lat: req.body.lat,
-            long: req.body.long,
-            name: req.body.name,
-            administrative: req.body.administrative,
-            county: req.body.county,
-            country: req.body.country,
-            city: req.body.city,
-        });
-        if (result === null) {
-            res.status(404);
-            console.log('result null');
-            res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
-            return;
+            const result = await updateAddress({
+                db: res.locals.db,
+                uuid: user.uuid,
+                lat: req.body.lat,
+                long: req.body.long,
+                name: req.body.name,
+                administrative: req.body.administrative,
+                county: req.body.county,
+                country: req.body.country,
+                city: req.body.city,
+            });
+            if (result === null) {
+                res.status(404);
+                console.log('result null');
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
         }
-        res.json({
-            statusCode: UpdateUserStatusCode.DONE,
-        });
     });
 }
