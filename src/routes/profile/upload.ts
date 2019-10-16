@@ -1,5 +1,7 @@
 import * as express from 'express';
 import fileType from 'file-type';
+import uuid from 'uuid';
+import { updateProfilePics } from '../../models/user';
 
 const enum UploadPicsStatusCode {
     DONE = 'DONE',
@@ -12,8 +14,6 @@ export default function setupUpload(router: express.Router) {
         try {
             const cloud = res.locals.cloud;
 
-            // uplaod with stream n minio
-
             if (
                 req.files === undefined ||
                 req.files.profile === undefined ||
@@ -22,13 +22,28 @@ export default function setupUpload(router: express.Router) {
                 return;
             }
 
-            await cloud.putObject(
-                'profile-pics',
-                req.files.profile.name,
-                req.files.profile.data,
-                { 'Content-Type': fileType(req.files.profile.data)!.mime }
-            );
+            // Upload new pics in minio
+            const fType = fileType(req.files.profile.data);
+            const newPics = `${uuid()}.${fType!.ext}`;
 
+            // await cloud.putObject(
+            //     'profile-pics',
+            //     newPics,
+            //     req.files.profile.data,
+            //     { 'Content-Type': fType!.mime }
+            // );
+
+            // upsert new pics in db
+            const result = await updateProfilePics({
+                newPics,
+                db: res.locals.db,
+                uuid1: res.locals.user.uuid,
+            });
+
+            // if oldpics exist delete it from minio to
+            if (result !== null) {
+                console.log(result);
+            }
             res.json({
                 statusCode: UploadPicsStatusCode.DONE,
             });
@@ -37,3 +52,13 @@ export default function setupUpload(router: express.Router) {
         }
     });
 }
+
+// newPics
+// minioUpload newPics
+//    |
+//     if oldPics exist
+//        - UPDATE oldPics by newPics AND return oldPics
+//        - minioDelete oldPics
+//     else
+//          INSERT newPics
+//

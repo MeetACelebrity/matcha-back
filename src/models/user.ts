@@ -62,6 +62,10 @@ export interface UpdateExtendedUserArgs extends ModelArgs {
     sexualOrientation: SexualOrientation;
 }
 
+export interface UpdateProfilePicsArgs extends ModelArgs {
+    uuid1: string;
+    newPics: string;
+}
 export interface UpdateTagsArgs extends ModelArgs {
     uuid: string;
     tags: string;
@@ -670,72 +674,6 @@ export async function updateBiography({
     }
 }
 
-export async function updateTags({
-    db,
-    uuid: guid,
-    tags,
-}: UpdateTagsArgs): Promise<true | null> {
-    const token = uuid();
-
-    const query = `
-        WITH
-            id_user
-        AS 
-        (
-            SELECT
-                id
-            FROM
-                users
-            WHERE
-                uuid=$1
-        ),
-            id_tag
-        AS
-        (
-            INSERT INTO
-                tags
-                (
-                    uuid,
-                    name
-                )
-            VALUES
-                (
-                    $3,
-                    $2
-                )
-            ON CONFLICT
-                (
-                    name
-                )
-            DO 
-                UPDATE 
-                SET 
-                    name=EXCLUDED.name 
-            RETURNING id
-
-        )
-        INSERT INTO
-            users_tags
-            (
-                user_id,
-                tag_id
-            )
-        SELECT 
-            id_user.id,
-            id_tag.id
-        FROM
-            id_user, id_tag
-        `;
-    try {
-        const { rowCount } = await db.query(query, [guid, tags, token]);
-        if (rowCount === 0) return null;
-        return true;
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
-}
-
 export async function updateAddress({
     db,
     uuid,
@@ -812,6 +750,140 @@ export async function updateAddress({
         ]);
         if (rowCount === 0) return null;
         return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateTags({
+    db,
+    uuid: guid,
+    tags,
+}: UpdateTagsArgs): Promise<true | null> {
+    const token = uuid();
+
+    const query = `
+        WITH
+            id_user
+        AS 
+        (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid=$1
+        ),
+            id_tag
+        AS
+        (
+            INSERT INTO
+                tags
+                (
+                    uuid,
+                    name
+                )
+            VALUES
+                (
+                    $3,
+                    $2
+                )
+            ON CONFLICT
+                (
+                    name
+                )
+            DO 
+                UPDATE 
+                SET 
+                    name=EXCLUDED.name 
+            RETURNING id
+
+        )
+        INSERT INTO
+            users_tags
+            (
+                user_id,
+                tag_id
+            )
+        SELECT 
+            id_user.id,
+            id_tag.id
+        FROM
+            id_user, id_tag
+        `;
+    try {
+        const { rowCount } = await db.query(query, [guid, tags, token]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateProfilePics({
+    db,
+    uuid1,
+    newPics,
+}: UpdateProfilePicsArgs) {
+    const uuid2 = uuid();
+    const query = `
+        WITH
+            id_user
+        AS
+        (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid=$1
+        ),
+            new_images
+        (
+            INSERT INTO
+                images
+                (
+                    uuid,
+                    path
+                )
+                VALUES
+                (
+                    $3,
+                    42
+                )
+                RETURNING
+                id
+        )
+        INSERT INTO
+            profile_pictures
+            (
+                image_id,
+                user_id,
+                is_primary
+            )
+            VALUES
+            (
+                (SELECT id FROM new_images),
+                (SELECT id FROM id_user),
+                true
+            )
+            ON CONFLICT
+            (
+                user_id,
+                is_primary
+            )
+            DO
+                UPDATE
+                SET
+                    image_id=(select id FROM new_images) 
+    `;
+    try {
+        const {
+            rows: [user],
+        } = await db.query(query, [uuid1, newPics, uuid2]);
+        return user || null;
     } catch (e) {
         console.error(e);
         return null;
