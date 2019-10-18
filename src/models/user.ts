@@ -66,6 +66,12 @@ export interface UpdateProfilePicsArgs extends ModelArgs {
     uuid1: string;
     newPics: string;
 }
+
+export interface InsertPicsArgs extends ModelArgs {
+    uuid1: string;
+    newPics: string;
+}
+
 export interface UpdateTagsArgs extends ModelArgs {
     uuid: string;
     tags: string;
@@ -826,7 +832,7 @@ export async function updateProfilePics({
     db,
     uuid1,
     newPics,
-}: UpdateProfilePicsArgs) {
+}: UpdateProfilePicsArgs): Promise<string | null> {
     const uuid2 = uuid();
     const query = `SELECT upsert_profile_picture($1, $2, $3)`;
     try {
@@ -839,3 +845,41 @@ export async function updateProfilePics({
         return null;
     }
 }
+
+export async function insertPics({
+    db,
+    uuid1,
+    newPics,
+}: InsertPicsArgs): Promise<string | null> {
+    const uuid2 = uuid();
+    const query = `SELECT insert_picture($1, $2, $3)`;
+
+    console.log(uuid1);
+    try {
+        const {
+            rows: [image],
+        } = await db.query(query, [uuid1, newPics, uuid2]);
+        return image.insert_picture;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+// export async function deletePics({
+//     db,
+//     uuid1,
+//     newPics,
+// }: InsertPicsArgs): Promise<string | null> {
+//     const query = ``;
+
+//     try {
+//         const {
+//             rows: [image],
+//         } = await db.query(query, [uuid1, newPics]);
+//         return image.upsert_profile_picture;
+//     } catch (e) {
+//         console.error(e);
+//         return null;
+//     }
+// }
