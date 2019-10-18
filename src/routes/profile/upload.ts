@@ -26,12 +26,12 @@ export default function setupUpload(router: express.Router) {
             const fType = fileType(req.files.profile.data);
             const newPics = `${uuid()}.${fType!.ext}`;
 
-            // await cloud.putObject(
-            //     'profile-pics',
-            //     newPics,
-            //     req.files.profile.data,
-            //     { 'Content-Type': fType!.mime }
-            // );
+            await cloud.putObject(
+                'profile-pics',
+                newPics,
+                req.files.profile.data,
+                { 'Content-Type': fType!.mime }
+            );
 
             // upsert new pics in db
             const result = await updateProfilePics({
@@ -39,10 +39,9 @@ export default function setupUpload(router: express.Router) {
                 db: res.locals.db,
                 uuid1: res.locals.user.uuid,
             });
-
             // if oldpics exist delete it from minio to
-            if (result !== null) {
-                console.log(result);
+            if (result !== 'DONE') {
+                await cloud.removeObject('profile-pics', result);
             }
             res.json({
                 statusCode: UploadPicsStatusCode.DONE,

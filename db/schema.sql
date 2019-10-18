@@ -60,7 +60,9 @@ CREATE TABLE "profile_pictures" (
   "id" serial PRIMARY KEY,
   "image_id" int NOT NULL,
   "user_id" int NOT NULL,
-  "is_primary" bool NOT NULL DEFAULT false
+  "image_nb" int NOT NULL CHECK ("image_nb" < 5),
+  UNIQUE (user_id, image_nb),
+  UNIQUE (image_id)
 );
 
 CREATE TABLE "images" (
@@ -208,3 +210,5 @@ CREATE UNIQUE INDEX ON "tags" ("name");
 CREATE UNIQUE INDEX ON "users_tags" ("tag_id", "user_id");
 
 CREATE UNIQUE INDEX ON "matches" ("a", "b");
+
+CREATE UNIQUE INDEX ON "profile_pictures" ("image_id");

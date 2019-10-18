@@ -828,62 +828,12 @@ export async function updateProfilePics({
     newPics,
 }: UpdateProfilePicsArgs) {
     const uuid2 = uuid();
-    const query = `
-        WITH
-            id_user
-        AS
-        (
-            SELECT
-                id
-            FROM
-                users
-            WHERE
-                uuid=$1
-        ),
-            new_images
-        (
-            INSERT INTO
-                images
-                (
-                    uuid,
-                    path
-                )
-                VALUES
-                (
-                    $3,
-                    42
-                )
-                RETURNING
-                id
-        )
-        INSERT INTO
-            profile_pictures
-            (
-                image_id,
-                user_id,
-                is_primary
-            )
-            VALUES
-            (
-                (SELECT id FROM new_images),
-                (SELECT id FROM id_user),
-                true
-            )
-            ON CONFLICT
-            (
-                user_id,
-                is_primary
-            )
-            DO
-                UPDATE
-                SET
-                    image_id=(select id FROM new_images) 
-    `;
+    const query = `SELECT upsert_profile_picture($1, $2, $3)`;
     try {
         const {
-            rows: [user],
+            rows: [image],
         } = await db.query(query, [uuid1, newPics, uuid2]);
-        return user || null;
+        return image.upsert_profile_picture;
     } catch (e) {
         console.error(e);
         return null;
