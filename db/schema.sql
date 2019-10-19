@@ -67,7 +67,7 @@ CREATE TABLE "profile_pictures" (
 
 CREATE TABLE "images" (
   "id" serial PRIMARY KEY,
-  "uuid" text NOT NULL,
+  "uuid" uuid NOT NULL,
   "path" text NOT NULL
 );
 

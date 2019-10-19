@@ -1,7 +1,7 @@
 import * as express from 'express';
 import fileType from 'file-type';
 import uuid from 'uuid';
-import { updateProfilePics, insertPics } from '../../models/user';
+import { updateProfilePics, insertPics, deletePics } from '../../models/user';
 
 const enum UploadPicsStatusCode {
     DONE = 'DONE',
@@ -87,6 +87,33 @@ export default function setupUpload(router: express.Router) {
                 req.files.profile.data,
                 { 'Content-Type': fType!.mime }
             );
+            res.json({
+                statusCode: UploadPicsStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.delete('/pics', async (req, res) => {
+        try {
+            const cloud = res.locals.cloud;
+
+            // Delete pics in db
+            const result = await deletePics({
+                db: res.locals.db,
+                uuid: res.locals.user.uuid,
+                pics: req.body.pics,
+            });
+
+            // Delete pics in Minio
+            if (result === 'BAD_IMAGE' || result === null) {
+                res.json({
+                    statusCode: UploadPicsStatusCode.UNKNOWN_ERROR,
+                });
+                return;
+            }
+            await cloud.removeObject('profile-pics', result);
             res.json({
                 statusCode: UploadPicsStatusCode.DONE,
             });

@@ -67,11 +67,6 @@ export interface UpdateProfilePicsArgs extends ModelArgs {
     newPics: string;
 }
 
-export interface InsertPicsArgs extends ModelArgs {
-    uuid1: string;
-    newPics: string;
-}
-
 export interface UpdateTagsArgs extends ModelArgs {
     uuid: string;
     tags: string;
@@ -88,6 +83,15 @@ export interface UpdateAddressnArgs extends ModelArgs {
     city: string;
 }
 
+export interface InsertPicsArgs extends ModelArgs {
+    uuid1: string;
+    newPics: string;
+}
+
+export interface DeletePicsArgs extends ModelArgs {
+    uuid: string;
+    pics: string;
+}
 export enum Gender {
     'MALE',
     'FEMALE',
@@ -854,7 +858,6 @@ export async function insertPics({
     const uuid2 = uuid();
     const query = `SELECT insert_picture($1, $2, $3)`;
 
-    console.log(uuid1);
     try {
         const {
             rows: [image],
@@ -866,20 +869,20 @@ export async function insertPics({
     }
 }
 
-// export async function deletePics({
-//     db,
-//     uuid1,
-//     newPics,
-// }: InsertPicsArgs): Promise<string | null> {
-//     const query = ``;
+export async function deletePics({
+    db,
+    uuid,
+    pics,
+}: DeletePicsArgs): Promise<string | null> {
+    const query = `SELECT delete_picture($1, $2)`;
 
-//     try {
-//         const {
-//             rows: [image],
-//         } = await db.query(query, [uuid1, newPics]);
-//         return image.upsert_profile_picture;
-//     } catch (e) {
-//         console.error(e);
-//         return null;
-//     }
-// }
+    try {
+        const {
+            rows: [image],
+        } = await db.query(query, [uuid, pics]);
+        return image.delete_picture;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
