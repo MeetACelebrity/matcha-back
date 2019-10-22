@@ -1,4 +1,5 @@
 import * as express from 'express';
+import { differenceInYears } from 'date-fns';
 
 import {
     updateGeneralUser,
@@ -18,10 +19,11 @@ const enum UpdateUserStatusCode {
     USERNAME_INCORRECT = 'USERNAME_INCORRECT',
     GIVEN_NAME_INCORRECT = 'GIVEN_NAME_INCORRECT',
     FAMILY_NAME_INCORRECT = 'FAMILY_NAME_INCORRECT',
-    AGE_INCORRECT = 'AGE_INCORRECT',
+    BIRTHDAY_INCORRECT = 'BIRTHDAY_INCORRECT',
     GENDER_INCORRECT = 'GENDER_INCORRECT',
     SEXUAL_ORIENTATION_INCORRECT = 'SEXUAL_ORIENTATION_INCORRECT',
     BIOGRAPHY_INCORRECT = 'BIOGRAPHY_INCORRECT',
+    UNDER_BIRTHDAY = 'UNDER_BIRTHDAY',
 
     INCORRECT_FIELD = 'INCORRECT_FIELD',
     PASSWORD_INCORRECT = 'PASSWORD_INCORRECT',
@@ -83,11 +85,9 @@ function passwordRouteValidation(req: express.Request): UpdateUserStatusCode {
     return UpdateUserStatusCode.DONE;
 }
 
-// /extended age, genrem sexualOrientation
+// /extended birthday, genrem sexualOrientation
 const extendedSchema: ValidatorObject = Validator.object().keys({
-    age: Validator.number()
-        .min(18)
-        .max(100),
+    birthday: Validator.number(),
     gender: Validator.string().whitelist(['MALE', 'FEMALE']),
     sexualOrientation: Validator.string().whitelist([
         'HETEROSEXUAL',
@@ -103,8 +103,8 @@ function extendedRouteValidation(req: express.Request): UpdateUserStatusCode {
         } = validationResult;
 
         switch (concernedKey) {
-            case 'age':
-                return UpdateUserStatusCode.AGE_INCORRECT;
+            case 'birthday':
+                return UpdateUserStatusCode.BIRTHDAY_INCORRECT;
             case 'gender':
                 return UpdateUserStatusCode.GENDER_INCORRECT;
             case 'sexualOrientation':
@@ -236,12 +236,20 @@ export default function setupTextual(router: express.Router) {
                 return;
             }
 
+            const birthday = new Date(req.body.birthday);
+            if (differenceInYears(new Date(), birthday) < 18) {
+                res.json({
+                    statusCode: UpdateUserStatusCode.UNDER_BIRTHDAY,
+                });
+                return;
+            }
+
             // insert of update
             const result = await updateExtendedUser({
                 db: res.locals.db,
                 uuid: user.uuid,
-                age: req.body.age,
                 gender: req.body.gender,
+                birthday: birthday.toISOString(),
                 sexualOrientation: req.body.sexualOrientation,
             });
             if (result === null) {
@@ -305,16 +313,17 @@ export default function setupTextual(router: express.Router) {
 
             // insert or update data
 
-            const result = await updateTags({
-                db: res.locals.db,
-                uuid: user.uuid,
-                tags: req.body.tags,
-            });
-            if (result === null) {
-                res.status(404);
-                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
-                return;
-            }
+            console.log(req.body.tags);
+            // const result = await updateTags({
+            //     db: res.locals.db,
+            //     uuid: user.uuid,
+            //     tags: req.body.tags,
+            // });
+            // if (result === null) {
+            //     res.status(404);
+            //     res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+            //     return;
+            // }
             res.json({
                 statusCode: UpdateUserStatusCode.DONE,
             });

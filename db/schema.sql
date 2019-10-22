@@ -50,7 +50,7 @@ CREATE TABLE "addresses" (
 CREATE TABLE "extended_profiles" (
   "id" serial PRIMARY KEY,
   "user_id" int NOT NULL,
-  "age" int NOT NULL DEFAULT 18,
+  "birthday" timestamp NOT NULL,
   "gender" gender,
   "sexual_orientation" sexual_orientation DEFAULT 'BISEXUAL',
   "biography" text

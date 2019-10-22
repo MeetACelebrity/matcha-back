@@ -9,6 +9,8 @@ export default function routes(server: Express) {
     server.use('/profile', profileRoutes());
 
     server.get('/me', async (_, res) => {
+        console.log('context =', res.locals.user);
+
         if (res.locals.user === null) {
             res.json(res.locals.user);
             return;

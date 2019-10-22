@@ -1,3 +1,4 @@
+import { UpdateBiographyArgs } from './../../dist/models/user.d';
 import uuid from 'uuid/v4';
 import { hash } from 'argon2';
 
@@ -57,7 +58,7 @@ export interface UpdateBiographyArgs extends ModelArgs {
 
 export interface UpdateExtendedUserArgs extends ModelArgs {
     uuid: string;
-    age: number;
+    birthday: string;
     gender: Gender;
     sexualOrientation: SexualOrientation;
 }
@@ -103,6 +104,12 @@ export enum SexualOrientation {
     'BISEXUAL',
 }
 
+export interface Image {
+    uuid: string;
+    path: string;
+    imageNumber: number;
+}
+
 /**
  * An External User can be safely sent
  * to the client because it does not hold sensible data.
@@ -115,6 +122,11 @@ export interface ExternalUser {
     email: string;
     createdAt: string;
     confirmed: boolean;
+    birthday?: number;
+    gender?: Gender;
+    sexualOrientation?: SexualOrientation;
+    biography?: string;
+    images: Image[];
 }
 
 /**
@@ -136,6 +148,11 @@ export function internalUserToExternalUser({
     email,
     createdAt,
     confirmed,
+    birthday,
+    biography,
+    gender,
+    sexualOrientation,
+    images,
 }: InternalUser): ExternalUser {
     return {
         uuid,
@@ -145,6 +162,11 @@ export function internalUserToExternalUser({
         email,
         createdAt,
         confirmed,
+        birthday,
+        biography,
+        gender,
+        sexualOrientation,
+        images,
     };
 }
 
@@ -277,27 +299,75 @@ export async function getUserByUuid({
     db,
     uuid,
 }: GetUserByUuidArgs): Promise<InternalUser | null> {
-    const query = `
+    const basicInformationsQuery = `
         SELECT
-            id,
-            uuid,
-            given_name as "givenName",
-            family_name as "familyName",
-            username,
-            email,
-            password,
-            created_at as "createdAt",
-            confirmed
+            users.id,
+            users.uuid,
+            users.given_name as "givenName",
+            users.family_name as "familyName",
+            users.username,
+            users.email,
+            users.password,
+            users.created_at as "createdAt",
+            users.confirmed,
+            extended_profiles.birthday,
+            extended_profiles.gender,
+            extended_profiles.sexual_orientation as "sexualOrientation",
+            extended_profiles.biography
         FROM
             users
-        WHERE 
-            uuid = $1
+        LEFT JOIN
+            extended_profiles
+        ON
+            users.id = extended_profiles.user_id
+        WHERE
+            users.uuid = $1
         `;
+
+    const profilePicturesQuery = `
+        WITH
+            id_user
+        AS (
+            SELECT id FROM users WHERE uuid = $1
+        )
+        SELECT
+            images.uuid,
+            images.path,
+            profile_pictures.image_nb AS "imageNumber"
+        FROM
+            profile_pictures
+        INNER JOIN
+            images
+        ON
+            profile_pictures.image_id = images.id
+        WHERE
+            profile_pictures.user_id = (
+                SELECT
+                    id
+                FROM
+                    id_user
+            )
+    `;
     try {
-        const {
-            rows: [user],
-        } = await db.query(query, [uuid]);
-        return user || null;
+        const [
+            {
+                rows: [user],
+            },
+            { rows: images },
+        ] = await Promise.all(
+            [basicInformationsQuery, profilePicturesQuery].map(query =>
+                db.query(query, [uuid])
+            )
+        );
+
+        if (!user || !Array.isArray(images)) return null;
+
+        const finalUser = {
+            ...user,
+            images,
+        };
+
+        return finalUser;
     } catch (e) {
         console.error(e);
         return null;
@@ -450,7 +520,7 @@ export async function resetingPassword({
                 FROM
                     users_tokens
                 WHERE
-                    age(now(), users_tokens.created_at) < ('15 min'::interval)
+                    birthday(now(), users_tokens.created_at) < ('15 min'::interval)
                 AND
                     users_tokens.confirmed='t'
             )
@@ -540,7 +610,7 @@ export async function updatePasswordUser({
 export async function updateExtendedUser({
     db,
     uuid,
-    age,
+    birthday,
     gender,
     sexualOrientation,
 }: UpdateExtendedUserArgs): Promise<true | null> {
@@ -563,7 +633,7 @@ export async function updateExtendedUser({
                 extended_profiles
                 (
                     user_id,
-                    age,
+                    birthday,
                     gender,
                     sexual_orientation
                 )
@@ -581,7 +651,7 @@ export async function updateExtendedUser({
             DO
                 UPDATE
                 SET
-                    age=$2,
+                    birthday=$2,
                     gender=$3,
                     sexual_orientation=$4
                 WHERE
@@ -604,7 +674,7 @@ export async function updateExtendedUser({
     try {
         const { rowCount } = await db.query(query, [
             uuid,
-            age,
+            birthday,
             gender,
             sexualOrientation,
         ]);
@@ -774,53 +844,7 @@ export async function updateTags({
     const token = uuid();
 
     const query = `
-        WITH
-            id_user
-        AS 
-        (
-            SELECT
-                id
-            FROM
-                users
-            WHERE
-                uuid=$1
-        ),
-            id_tag
-        AS
-        (
-            INSERT INTO
-                tags
-                (
-                    uuid,
-                    name
-                )
-            VALUES
-                (
-                    $3,
-                    $2
-                )
-            ON CONFLICT
-                (
-                    name
-                )
-            DO 
-                UPDATE 
-                SET 
-                    name=EXCLUDED.name 
-            RETURNING id
-
-        )
-        INSERT INTO
-            users_tags
-            (
-                user_id,
-                tag_id
-            )
-        SELECT 
-            id_user.id,
-            id_tag.id
-        FROM
-            id_user, id_tag
+       
         `;
     try {
         const { rowCount } = await db.query(query, [guid, tags, token]);

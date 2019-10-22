@@ -52,13 +52,18 @@ async function app() {
         .use(async (req, res, next) => {
             // get all user data
             const user = await getUserByUuid({ db, uuid: req.session!.user });
+
+            console.log('gotten user =', user);
+
             const context: Context = {
                 db,
                 cloud,
                 user,
                 isAuthenticated: req.session!.user !== null,
             };
+
             res.locals = context;
+
             next();
         });
 
