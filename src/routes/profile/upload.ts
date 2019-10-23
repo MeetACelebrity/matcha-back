@@ -99,6 +99,7 @@ export default function setupUpload(router: express.Router) {
         try {
             const cloud = res.locals.cloud;
 
+            console.log(req.body.pics);
             // Delete pics in db
             const result = await deletePics({
                 db: res.locals.db,

@@ -909,6 +909,7 @@ export async function deletePics({
         const {
             rows: [image],
         } = await db.query(query, [uuid, pics]);
+        console.log(`uuid: ${uuid}, imgUuid: ${pics}`);
         return image.delete_picture;
     } catch (e) {
         console.error(e);
