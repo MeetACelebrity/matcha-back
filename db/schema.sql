@@ -68,7 +68,7 @@ CREATE TABLE "profile_pictures" (
 CREATE TABLE "images" (
   "id" serial PRIMARY KEY,
   "uuid" uuid NOT NULL,
-  "path" text NOT NULL
+  "src" text NOT NULL
 );
 
 CREATE TABLE "tokens" (

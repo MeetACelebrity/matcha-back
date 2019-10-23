@@ -1,3 +1,4 @@
+import { CLOUD_ENDPOINT, PROFILE_PICTURES_BUCKET } from './../constants';
 import { UpdateBiographyArgs } from './../../dist/models/user.d';
 import uuid from 'uuid/v4';
 import { hash } from 'argon2';
@@ -106,7 +107,7 @@ export enum SexualOrientation {
 
 export interface Image {
     uuid: string;
-    path: string;
+    src: string;
     imageNumber: number;
 }
 
@@ -332,7 +333,7 @@ export async function getUserByUuid({
         )
         SELECT
             images.uuid,
-            images.path,
+            images.src,
             profile_pictures.image_nb AS "imageNumber"
         FROM
             profile_pictures
@@ -349,6 +350,7 @@ export async function getUserByUuid({
             )
     `;
     try {
+        const url = `${CLOUD_ENDPOINT}${PROFILE_PICTURES_BUCKET}`;
         const [
             {
                 rows: [user],
@@ -364,7 +366,10 @@ export async function getUserByUuid({
 
         const finalUser = {
             ...user,
-            images,
+            images: images.map(({ src, ...images }) => ({
+                ...images,
+                src: `${CLOUD_ENDPOINT}${PROFILE_PICTURES_BUCKET}${src}`,
+            })),
         };
 
         return finalUser;

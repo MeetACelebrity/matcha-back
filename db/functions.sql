@@ -19,7 +19,7 @@ BEGIN
         images 
         (
             uuid,
-            path
+            src
         )
     VALUES
         (
@@ -50,7 +50,7 @@ BEGIN
         -- Get id of the old
         SELECT 
             profile_pictures.image_id, 
-            images.path
+            images.src
         INTO
             old_image
         FROM 
@@ -79,7 +79,7 @@ BEGIN
             images
         WHERE
             id=old_image.image_id;
-        RETURN old_image.path;
+        RETURN old_image.src;
     END;
     RETURN 'DONE';
 END;
@@ -124,7 +124,7 @@ BEGIN
         images 
         (
             uuid,
-            path
+            src
         )
     VALUES
         (
@@ -227,6 +227,6 @@ BEGIN
             image_nb=image_nb - 1
         WHERE id = pp_row.id;
     END LOOP;
-    RETURN current_image.path;
+    RETURN current_image.src;
 END;
 $$ LANGUAGE plpgsql;
