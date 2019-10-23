@@ -4,6 +4,7 @@ import { verify } from 'argon2';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import {
     internalUserToExternalUser,
+    getUserByUuid,
     getUserByUsername,
 } from '../../models/user';
 
@@ -76,7 +77,19 @@ export default function signInMiddleware(router: express.Router) {
             if (await verify(user.password, req.body.password)) {
                 console.log('we will set the session to', user);
                 req.session!.user = user.uuid;
-                res.json({ statusCode: SignInStatusCode.DONE });
+
+                const result = await getUserByUuid({
+                    db: res.locals.db,
+                    uuid: user.uuid,
+                });
+                if (result === null) {
+                    res.json({ statusCode: SignInStatusCode.UNKNOWN_ERROR });
+                    return;
+                }
+                res.json({
+                    statusCode: SignInStatusCode.DONE,
+                    user: internalUserToExternalUser(result),
+                });
 
                 return;
             }

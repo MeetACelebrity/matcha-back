@@ -1,1 +1,1 @@
-export const FRONT_ENDPOINT = 'http://e1r7p10.42.fr:3000';
+export const FRONT_ENDPOINT = 'http://e2r2p15.42.fr:3000';

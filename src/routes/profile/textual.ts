@@ -68,7 +68,7 @@ function generalRouteValidation(req: express.Request): UpdateUserStatusCode {
 
 // /password
 const passwordSchema: ValidatorObject = Validator.object().keys({
-    oldPassword: Validator.string().min(6),
+    currentPassword: Validator.string().min(6),
     newPassword: Validator.string().min(6),
 });
 function passwordRouteValidation(req: express.Request): UpdateUserStatusCode {
@@ -151,7 +151,6 @@ export default function setupTextual(router: express.Router) {
                 });
                 return;
             }
-
             const result = await updateGeneralUser({
                 db: res.locals.db,
                 uuid: user.uuid,
@@ -191,7 +190,7 @@ export default function setupTextual(router: express.Router) {
                 return;
             }
 
-            if (await verify(user.password, req.body.oldPassword)) {
+            if (await verify(user.password, req.body.currentPassword)) {
                 const result = await updatePasswordUser({
                     db: res.locals.db,
                     uuid: user.uuid,
