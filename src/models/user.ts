@@ -147,6 +147,10 @@ export interface InternalUser extends ExternalUser {
     password: string;
 }
 
+export function srcToPath(src: string) {
+    return `${CLOUD_ENDPOINT}${PROFILE_PICTURES_BUCKET}${src}`;
+}
+
 export function internalUserToExternalUser({
     id,
     uuid,
@@ -357,7 +361,6 @@ export async function getUserByUuid({
             )
     `;
     try {
-        const url = `${CLOUD_ENDPOINT}${PROFILE_PICTURES_BUCKET}`;
         const [
             {
                 rows: [user],
@@ -375,7 +378,7 @@ export async function getUserByUuid({
             ...user,
             images: images.map(({ src, ...images }) => ({
                 ...images,
-                src: `${CLOUD_ENDPOINT}${PROFILE_PICTURES_BUCKET}${src}`,
+                src: srcToPath(src),
             })),
         };
 

@@ -1,12 +1,18 @@
 import * as express from 'express';
 import fileType from 'file-type';
 import uuid from 'uuid';
-import { updateProfilePics, insertPics, deletePics } from '../../models/user';
+import {
+    updateProfilePics,
+    insertPics,
+    deletePics,
+    srcToPath,
+} from '../../models/user';
 
 const enum UploadPicsStatusCode {
     DONE = 'DONE',
     TOO_MANY_PICS = 'TOO_MANY_PICS',
     UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+    FORBIDDEN_FILE = 'FORBIDDEN_FILE',
 }
 
 export default function setupUpload(router: express.Router) {
@@ -63,6 +69,13 @@ export default function setupUpload(router: express.Router) {
             }
 
             const fType = fileType(req.files.profile.data);
+            const authorizeType = ['png', 'jpeg', 'gif'];
+
+            if (fType === undefined || !authorizeType.includes(fType.ext)) {
+                res.json({ statusCode: UploadPicsStatusCode.FORBIDDEN_FILE });
+                return;
+            }
+
             const newPics = `${uuid()}.${fType!.ext}`;
 
             // Insert pics in db and check if it's possible
@@ -92,9 +105,13 @@ export default function setupUpload(router: express.Router) {
                 req.files.profile.data,
                 { 'Content-Type': fType!.mime }
             );
+
             res.json({
                 statusCode: UploadPicsStatusCode.DONE,
-                image: result,
+                image: {
+                    ...result,
+                    src: srcToPath(result.src),
+                },
             });
         } catch (e) {
             console.error(e);
