@@ -343,6 +343,7 @@ export default function setupTextual(router: express.Router) {
             const result = await updateAddress({
                 db: res.locals.db,
                 uuid: user.uuid,
+                isPrimary: req.body.isPrimary,
                 lat: req.body.lat,
                 long: req.body.long,
                 name: req.body.name,

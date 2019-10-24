@@ -22,8 +22,14 @@ CREATE TYPE "notification_type" AS ENUM (
   'GOT_UNLIKE_MUTUAL'
 );
 
+CREATE TYPE "roaming_preferences" AS ENUM (
+  'ACCEPTED',
+  'REFUSED',
+  'NOT_SET'
+);
+
 CREATE TABLE "users" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
   "given_name" text NOT NULL,
   "family_name" text NOT NULL,
@@ -32,23 +38,25 @@ CREATE TABLE "users" (
   "password" text NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   "extended_profile" int,
-  "confirmed" bool NOT NULL DEFAULT false
+  "confirmed" bool NOT NULL DEFAULT false,
+  "roaming" roaming_preferences NOT NULL DEFAULT 'NOT_SET',
+  "primary_address_id" int,
+  "current_address_id" int
 );
 
 CREATE TABLE "addresses" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "point" point NOT NULL,
   "name" text NOT NULL,
   "administrative" text NOT NULL,
   "county" text NOT NULL,
   "city" text NOT NULL,
   "country" text NOT NULL,
-  "user_id" int NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "extended_profiles" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "user_id" int NOT NULL,
   "birthday" timestamp,
   "gender" gender,
@@ -57,22 +65,20 @@ CREATE TABLE "extended_profiles" (
 );
 
 CREATE TABLE "profile_pictures" (
-  "id" serial PRIMARY KEY,
-  "image_id" int NOT NULL,
-  "user_id" int NOT NULL,
-  "image_nb" int NOT NULL CHECK ("image_nb" < 5),
-  UNIQUE (user_id, image_nb),
-  UNIQUE (image_id)
+  "id" SERIAL PRIMARY KEY,
+  "image_id" int UNIQUE NOT NULL,
+  "user_id" int UNIQUE NOT NULL,
+  "image_nb" int UNIQUE NOT NULL
 );
 
 CREATE TABLE "images" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
   "src" text NOT NULL
 );
 
 CREATE TABLE "tokens" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "token" uuid NOT NULL,
   "user_id" int NOT NULL,
   "type" token_type NOT NULL,
@@ -86,14 +92,14 @@ CREATE TABLE "likes" (
 );
 
 CREATE TABLE "visits" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "visitor" int NOT NULL,
   "visited" int NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "messages" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
   "author_id" int NOT NULL,
   "conversation_id" int NOT NULL,
@@ -101,7 +107,7 @@ CREATE TABLE "messages" (
 );
 
 CREATE TABLE "conversations" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
@@ -112,7 +118,7 @@ CREATE TABLE "conversations_users" (
 );
 
 CREATE TABLE "notifications" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
   "type" notification_type NOT NULL,
   "notified_user_id" int NOT NULL,
@@ -120,7 +126,7 @@ CREATE TABLE "notifications" (
 );
 
 CREATE TABLE "tags" (
-  "id" serial PRIMARY KEY,
+  "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
   "name" text NOT NULL
 );
@@ -135,9 +141,11 @@ CREATE TABLE "matches" (
   "b" int NOT NULL
 );
 
-ALTER TABLE "users" ADD FOREIGN KEY ("extended_profile") REFERENCES "extended_profiles" ("id");
+ALTER TABLE "users" ADD FOREIGN KEY ("primary_address_id") REFERENCES "addresses" ("id");
 
-ALTER TABLE "addresses" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "users" ADD FOREIGN KEY ("current_address_id") REFERENCES "addresses" ("id");
+
+ALTER TABLE "users" ADD FOREIGN KEY ("extended_profile") REFERENCES "extended_profiles" ("id");
 
 ALTER TABLE "extended_profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
@@ -181,9 +189,9 @@ CREATE UNIQUE INDEX ON "users" ("username");
 
 CREATE UNIQUE INDEX ON "users" ("email");
 
-CREATE UNIQUE INDEX ON "addresses" ("user_id");
-
 CREATE UNIQUE INDEX ON "extended_profiles" ("user_id");
+
+CREATE UNIQUE INDEX ON "profile_pictures" ("image_id");
 
 CREATE UNIQUE INDEX ON "images" ("uuid");
 
@@ -210,5 +218,3 @@ CREATE UNIQUE INDEX ON "tags" ("name");
 CREATE UNIQUE INDEX ON "users_tags" ("tag_id", "user_id");
 
 CREATE UNIQUE INDEX ON "matches" ("a", "b");
-
-CREATE UNIQUE INDEX ON "profile_pictures" ("image_id");

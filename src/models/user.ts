@@ -74,8 +74,9 @@ export interface UpdateTagsArgs extends ModelArgs {
     tags: string;
 }
 
-export interface UpdateAddressnArgs extends ModelArgs {
+export interface UpdateAddressArgs extends ModelArgs {
     uuid: string;
+    isPrimary: boolean;
     lat: number;
     long: number;
     name: string;
@@ -772,6 +773,7 @@ export async function updateBiography({
 export async function updateAddress({
     db,
     uuid,
+    isPrimary,
     lat,
     long,
     name,
@@ -779,62 +781,16 @@ export async function updateAddress({
     county,
     country,
     city,
-}: UpdateAddressnArgs): Promise<true | null> {
+}: UpdateAddressArgs): Promise<true | null> {
     const query = `
-        WITH
-            id_user
-        AS 
-        (
-            SELECT
-                id
-            FROM
-                users
-            WHERE
-                uuid=$1
-        )
-        INSERT INTO
-            addresses
-        (
-            point,
-            name,
-            administrative,
-            county,
-            country,
-            city,
-            user_id
-        )
-        SELECT
-            POINT($2, $3),
-            $4,
-            $5,
-            $6,
-            $7,
-            $8,
-            id
-        FROM
-            id_user
-        ON CONFLICT (
-            user_id
-        )
-        DO
-            UPDATE
-            SET
-                point = POINT($2, $3),
-                name = $4,
-                administrative = $5,
-                county = $6,
-                country = $7,
-                city = $8
-            WHERE
-                addresses.user_id= (
-                    SELECT id FROM id_user
-                )
+       
             
     `;
 
     try {
         const { rowCount } = await db.query(query, [
             uuid,
+            isPrimary,
             lat,
             long,
             name,
