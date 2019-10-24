@@ -781,14 +781,15 @@ export async function updateAddress({
     county,
     country,
     city,
-}: UpdateAddressArgs): Promise<true | null> {
+}: UpdateAddressArgs): Promise<String | null> {
     const query = `
-       
-            
+        SELECT upsert_addresses($1, $2, $3, $4, $5, $6, $7, $8, $9);
     `;
 
     try {
-        const { rowCount } = await db.query(query, [
+        const {
+            rows: [address],
+        } = await db.query(query, [
             uuid,
             isPrimary,
             lat,
@@ -799,8 +800,7 @@ export async function updateAddress({
             country,
             city,
         ]);
-        if (rowCount === 0) return null;
-        return true;
+        return address.upsert_addresses;
     } catch (e) {
         console.error(e);
         return null;

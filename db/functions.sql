@@ -228,7 +228,7 @@ CREATE OR REPLACE FUNCTION delete_picture(uuid1 uuid, uuid2 uuid) RETURNS text A
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "lat" int, "long" int, "name" text, "administrative" text, "county" text, "country" text, "city" text) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "lat"  double precision, "long"  double precision, "name" text, "administrative" text, "county" text, "country" text, "city" text) RETURNS text AS $$
     DECLARE
         id_user record;
         id_addresses addresses%ROWTYPE;

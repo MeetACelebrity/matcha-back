@@ -352,7 +352,7 @@ export default function setupTextual(router: express.Router) {
                 country: req.body.country,
                 city: req.body.city,
             });
-            if (result === null) {
+            if (result !== 'DONE') {
                 res.status(404);
                 console.log('result null');
                 res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
