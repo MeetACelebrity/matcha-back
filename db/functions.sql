@@ -233,12 +233,15 @@ CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "
         id_user record;
         id_addresses addresses%ROWTYPE;
         address_field text;
+        address_type address_type;
     BEGIN
     -- Determin the address_field that we need to use
         IF is_primary THEN
             address_field := 'primary_address_id';
+            address_type := 'PRIMARY';
         ELSE
             address_field := 'current_address_id';
+            address_type := 'CURRENT';
         END IF;
 
     -- Get user id and address_field id
@@ -267,27 +270,39 @@ CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "
             WHERE
                 id_user.address_field = addresses.id;
         ELSE
-            INSERT INTO
-                addresses 
-            (   
-                point, 
-                name, 
-                administrative, 
-                county, 
-                country, 
-                city
+            EXECUTE format('
+                INSERT INTO
+                    addresses 
+                (   
+                    point, 
+                    name, 
+                    administrative, 
+                    county, 
+                    country, 
+                    city,
+                    type
+                )
+                VALUES 
+                (
+                    POINT(%L, %L),
+                    %L,
+                    %L,
+                    %L,
+                    %L,
+                    %L,
+                    %L
+                )
+                RETURNING
+                    id ',
+                    lat,
+                    long,
+                    name,
+                    administrative,
+                    county,
+                    country,
+                    city,
+                    address_type
             )
-            VALUES 
-            (
-                POINT($3, $4),
-                $5,
-                $6,
-                $7,
-                $8,
-                $9
-            )
-            RETURNING
-                id
             INTO
                 id_addresses;
             

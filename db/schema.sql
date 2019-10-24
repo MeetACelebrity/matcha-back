@@ -28,6 +28,11 @@ CREATE TYPE "roaming_preferences" AS ENUM (
   'NOT_SET'
 );
 
+CREATE TYPE "address_type" AS ENUM (
+  'PRIMARY',
+  'CURRENT'
+);
+
 CREATE TABLE "users" (
   "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
@@ -47,11 +52,12 @@ CREATE TABLE "users" (
 CREATE TABLE "addresses" (
   "id" SERIAL PRIMARY KEY,
   "point" point NOT NULL,
-  "name" text NOT NULL,
-  "administrative" text NOT NULL,
-  "county" text NOT NULL,
-  "city" text NOT NULL,
-  "country" text NOT NULL,
+  "name" text NULL,
+  "administrative" text NULL,
+  "county" text NULL,
+  "city" text NULL,
+  "country" text NULL,
+  "type" address_type NOT NULL DEFAULT 'PRIMARY',
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 

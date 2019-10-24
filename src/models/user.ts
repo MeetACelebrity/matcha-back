@@ -119,6 +119,18 @@ export interface Image {
     imageNumber: number;
 }
 
+export interface Addresses {
+    point: {
+        x: number;
+        y: number;
+    };
+    name: string;
+    administrative: string;
+    county: string;
+    country: string;
+    city: string;
+    type: boolean;
+}
 /**
  * An External User can be safely sent
  * to the client because it does not hold sensible data.
@@ -136,6 +148,7 @@ export interface ExternalUser {
     sexualOrientation?: SexualOrientation;
     biography?: string;
     images: Image[];
+    addresses: Addresses[];
 }
 
 /**
@@ -166,6 +179,7 @@ export function internalUserToExternalUser({
     gender,
     sexualOrientation,
     images,
+    addresses,
 }: InternalUser): ExternalUser {
     return {
         uuid,
@@ -180,6 +194,7 @@ export function internalUserToExternalUser({
         gender,
         sexualOrientation,
         images,
+        addresses,
     };
 }
 
@@ -361,22 +376,50 @@ export async function getUserByUuid({
                     id_user
             )
     `;
+
+    const addressesQuery = `
+        WITH
+            user_address
+        AS (
+            SELECT 
+                primary_address_id, 
+                current_address_id 
+            FROM 
+                users 
+            WHERE uuid = $1
+        )
+        SELECT
+            point,
+            name,
+            administrative,
+            county,
+            country,
+            city,
+            type
+        FROM
+            addresses
+        WHERE
+            addresses.id = (SELECT primary_address_id FROM user_address)
+        OR
+            addresses.id = (SELECT current_address_id FROM user_address) 
+    `;
     try {
         const [
             {
                 rows: [user],
             },
             { rows: images },
+            { rows: addresses },
         ] = await Promise.all(
-            [basicInformationsQuery, profilePicturesQuery].map(query =>
-                db.query(query, [uuid])
+            [basicInformationsQuery, profilePicturesQuery, addressesQuery].map(
+                query => db.query(query, [uuid])
             )
         );
-
         if (!user || !Array.isArray(images)) return null;
 
         const finalUser = {
             ...user,
+            addresses,
             images: images.map(({ src, ...images }) => ({
                 ...images,
                 src: srcToPath(src),
