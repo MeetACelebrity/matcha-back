@@ -85,9 +85,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
-CREATE OR REPLACE FUNCTION insert_picture(uuid1 uuid, new_pics text, uuid2 uuid) RETURNS text AS $$
+CREATE OR REPLACE FUNCTION insert_picture(uuid1 uuid, new_pics text, uuid2 uuid) RETURNS TABLE ("uuid" uuid, "src" text, "imageNumber" int, "error" text) AS $$
 DECLARE
     id_user users%ROWTYPE;
     new_image images%ROWTYPE;
@@ -101,7 +99,7 @@ BEGIN
     FROM
         users
     WHERE
-        uuid=$1;
+       users.uuid=$1;
 
 -- Get number image of user has AND check number
     SELECT
@@ -114,9 +112,8 @@ BEGIN
         user_id=id_user.id
     AND
         image_nb != 0;
-
     IF number_img > 4 THEN
-        RETURN 'TOO_MANY_PICS';
+        RETURN QUERY SELECT '', '', '', 'TOO_MANY_PICS';
     END IF;
 
 -- Insert image in images tables
@@ -132,7 +129,7 @@ BEGIN
             $2
         )
     RETURNING
-        id
+        images.id, images.uuid, images.src
     INTO
         new_image;
 
@@ -151,7 +148,7 @@ BEGIN
             number_img + 1
         );
 
-    RETURN 'DONE';
+    RETURN QUERY SELECT new_image.uuid, new_image.src, number_img + 1, 'DONE';
 END;
 $$ LANGUAGE plpgsql;
 

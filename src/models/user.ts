@@ -90,6 +90,13 @@ export interface InsertPicsArgs extends ModelArgs {
     newPics: string;
 }
 
+export interface InsertPicsReturning {
+    uuid: string;
+    src: string;
+    imageNumber: number;
+    error: string;
+}
+
 export interface DeletePicsArgs extends ModelArgs {
     uuid: string;
     pics: string;
@@ -883,15 +890,15 @@ export async function insertPics({
     db,
     uuid1,
     newPics,
-}: InsertPicsArgs): Promise<string | null> {
+}: InsertPicsArgs): Promise<InsertPicsReturning | null> {
     const uuid2 = uuid();
-    const query = `SELECT insert_picture($1, $2, $3)`;
+    const query = `SELECT * FROM insert_picture($1, $2, $3)`;
 
     try {
         const {
             rows: [image],
         } = await db.query(query, [uuid1, newPics, uuid2]);
-        return image.insert_picture;
+        return image;
     } catch (e) {
         console.error(e);
         return null;
@@ -909,7 +916,6 @@ export async function deletePics({
         const {
             rows: [image],
         } = await db.query(query, [uuid, pics]);
-        console.log(`uuid: ${uuid}, imgUuid: ${pics}`);
         return image.delete_picture;
     } catch (e) {
         console.error(e);

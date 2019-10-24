@@ -54,7 +54,6 @@ export default function setupUpload(router: express.Router) {
     router.post('/pics', async (req, res) => {
         try {
             const cloud = res.locals.cloud;
-
             if (
                 req.files === undefined ||
                 req.files.profile === undefined ||
@@ -73,7 +72,13 @@ export default function setupUpload(router: express.Router) {
                 uuid1: res.locals.user.uuid,
             });
 
-            if (result !== 'DONE') {
+            if (result === null) {
+                res.json({
+                    statusCode: UploadPicsStatusCode.UNKNOWN_ERROR,
+                });
+                return;
+            }
+            if (result.error !== 'DONE') {
                 res.json({
                     statusCode: UploadPicsStatusCode.TOO_MANY_PICS,
                 });
@@ -89,6 +94,7 @@ export default function setupUpload(router: express.Router) {
             );
             res.json({
                 statusCode: UploadPicsStatusCode.DONE,
+                image: result,
             });
         } catch (e) {
             console.error(e);
