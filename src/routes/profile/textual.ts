@@ -6,7 +6,8 @@ import {
     updatePasswordUser,
     updateExtendedUser,
     updateBiography,
-    updateTags,
+    addTags,
+    deleteTags,
     updateAddress,
 } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
@@ -299,38 +300,6 @@ export default function setupTextual(router: express.Router) {
         }
     });
 
-    router.put('/tags', async (req, res) => {
-        try {
-            const { user }: Context = res.locals;
-
-            if (user === null) {
-                res.sendStatus(404);
-                return;
-            }
-
-            // check info
-
-            // insert or update data
-
-            console.log(req.body.tags);
-            // const result = await updateTags({
-            //     db: res.locals.db,
-            //     uuid: user.uuid,
-            //     tags: req.body.tags,
-            // });
-            // if (result === null) {
-            //     res.status(404);
-            //     res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
-            //     return;
-            // }
-            res.json({
-                statusCode: UpdateUserStatusCode.DONE,
-            });
-        } catch (e) {
-            console.error(e);
-        }
-    });
-
     router.put('/address', async (req, res) => {
         try {
             const { user }: Context = res.locals;
@@ -355,6 +324,61 @@ export default function setupTextual(router: express.Router) {
             if (result !== 'DONE') {
                 res.status(404);
                 console.log('result null');
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.put('/tags/add', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+
+            const result = await addTags({
+                db: res.locals.db,
+                uuid: user.uuid,
+                tag: req.body.tag,
+            });
+            if (result !== 'DONE') {
+                res.status(404);
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.delete('/tags/delete', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+
+            const result = await deleteTags({
+                db: res.locals.db,
+                uuid: user.uuid,
+                tag: req.body.tag,
+            });
+
+            if (result !== 'DONE') {
+                res.status(404);
                 res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
                 return;
             }

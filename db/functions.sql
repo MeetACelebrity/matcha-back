@@ -317,3 +317,112 @@ CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "
         RETURN 'DONE';
     END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION upsert_tag("uuid" uuid, "token" uuid, "tag" text) RETURNS text AS $$
+    DECLARE
+        id_user record;
+        id_tag record;
+    BEGIN
+    -- Get id of user in id_user
+        SELECT
+            id
+        INTO
+            id_user
+        FROM
+            users
+        WHERE
+            users.uuid=$1;
+
+    -- Upsert tags and get id
+        BEGIN
+            INSERT INTO
+                tags (
+                    uuid, 
+                    name
+                )
+            VALUES
+                (
+                    $2, 
+                    $3
+                )
+            RETURNING
+                tags.id
+            INTO
+                id_tag;
+        RAISE NOTICE 'id_tag: %', id_tag;
+            EXCEPTION WHEN unique_violation THEN
+            SELECT 
+                id
+            INTO
+                id_tag 
+            FROM 
+                tags
+            WHERE
+                tags.name = $3;
+        END;
+    
+    -- Insert tags in users_tags
+        BEGIN
+            INSERT INTO
+                users_tags (
+                    tag_id,
+                    user_id
+                )
+            VALUES
+            (
+                id_tag.id,
+                id_user.id
+            );
+            EXCEPTION WHEN unique_violation THEN
+            RETURN 'TAGS ALREADY OWNED';
+        END;
+        RETURN 'DONE';
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION delete_tag("uuid" uuid, "tag" text) RETURNS text AS $$
+    DECLARE
+        id_user record;
+        id_tag record;
+    BEGIN
+    -- Get id of user in id_user
+        SELECT
+            id
+        INTO
+            id_user
+        FROM
+            users
+        WHERE
+            users.uuid=$1;
+    
+    -- Get id of tag
+        SELECT
+            id
+        INTO
+            id_tag
+        FROM
+            tags
+        WHERE
+            tags.name = $2;
+    
+    -- Check ids
+        IF id_user.id IS NULL OR id_tag.id IS NULL
+        THEN
+            RETURN 'BAD TAG';
+        END IF;
+ 
+    -- DELETE tag user link
+        DELETE FROM
+            users_tags
+        WHERE
+            users_tags.tag_id = id_tag.id
+        AND
+            users_tags.user_id = id_user.id;
+    -- if no user register to the tag, delete it from tags table 
+        IF NOT EXISTS (SELECT * FROM users_tags WHERE users_tags.tag_id = id_tag.id)
+        THEN
+            DELETE FROM tags WHERE tags.id = id_tag.id;
+        END IF;
+        RETURN 'DONE';
+    END;
+$$ LANGUAGE plpgsql;

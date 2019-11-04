@@ -69,9 +69,9 @@ export interface UpdateProfilePicsArgs extends ModelArgs {
     newPics: string;
 }
 
-export interface UpdateTagsArgs extends ModelArgs {
+export interface tagsArgs extends ModelArgs {
     uuid: string;
-    tags: string;
+    tag: string;
 }
 
 export interface UpdateAddressArgs extends ModelArgs {
@@ -850,26 +850,6 @@ export async function updateAddress({
     }
 }
 
-export async function updateTags({
-    db,
-    uuid: guid,
-    tags,
-}: UpdateTagsArgs): Promise<true | null> {
-    const token = uuid();
-
-    const query = `
-       
-        `;
-    try {
-        const { rowCount } = await db.query(query, [guid, tags, token]);
-        if (rowCount === 0) return null;
-        return true;
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
-}
-
 export async function updateProfilePics({
     db,
     uuid1,
@@ -919,6 +899,43 @@ export async function deletePics({
             rows: [image],
         } = await db.query(query, [uuid, pics]);
         return image.delete_picture;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function addTags({
+    db,
+    uuid: guid,
+    tag,
+}: tagsArgs): Promise<string | null> {
+    const token = uuid();
+    const query = `SELECT upsert_tag($1, $3, $2)`;
+
+    try {
+        const {
+            rows: [tags],
+        } = await db.query(query, [guid, tag, token]);
+        return tags.upsert_tag;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function deleteTags({
+    db,
+    uuid,
+    tag,
+}: tagsArgs): Promise<string | null> {
+    const query = `SELECT delete_tag($1, $2)`;
+
+    try {
+        const {
+            rows: [tags],
+        } = await db.query(query, [uuid, tag]);
+        return tags.delete_tag;
     } catch (e) {
         console.error(e);
         return null;
