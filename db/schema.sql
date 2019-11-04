@@ -135,7 +135,7 @@ CREATE TABLE "tags" (
   "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
   "name" text NOT NULL,
-  "tsvector" text NOT NULL
+  "tsvector" tsvector NOT NULL
 );
 
 CREATE TABLE "users_tags" (

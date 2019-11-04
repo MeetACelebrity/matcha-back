@@ -345,7 +345,7 @@ CREATE OR REPLACE FUNCTION upsert_tag("uuid" uuid, "token" uuid, "tag" text) RET
                 (
                     $2, 
                     $3,
-                    'function is coming'
+                    to_tsvector($3)
                 )
             RETURNING
                 tags.id

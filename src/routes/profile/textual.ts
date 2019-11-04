@@ -345,7 +345,7 @@ export default function setupTextual(router: express.Router) {
                 res.sendStatus(404);
                 return;
             }
-
+            console.log(req.body.tag);
             const result = await addTags({
                 db: res.locals.db,
                 uuid: user.uuid,
