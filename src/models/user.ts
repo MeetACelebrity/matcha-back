@@ -69,7 +69,7 @@ export interface UpdateProfilePicsArgs extends ModelArgs {
     newPics: string;
 }
 
-export interface tagsArgs extends ModelArgs {
+export interface TagsArgs extends ModelArgs {
     uuid: string;
     tag: string;
 }
@@ -131,6 +131,11 @@ export interface Addresses {
     city: string;
     type: boolean;
 }
+
+export interface Tags {
+    uuid: string;
+    name: string;
+}
 /**
  * An External User can be safely sent
  * to the client because it does not hold sensible data.
@@ -149,6 +154,7 @@ export interface ExternalUser {
     biography?: string;
     images: Image[];
     addresses: Addresses[];
+    tags: Tags[];
 }
 
 /**
@@ -180,6 +186,7 @@ export function internalUserToExternalUser({
     sexualOrientation,
     images,
     addresses,
+    tags,
 }: InternalUser): ExternalUser {
     return {
         uuid,
@@ -195,6 +202,7 @@ export function internalUserToExternalUser({
         sexualOrientation,
         images,
         addresses,
+        tags,
     };
 }
 
@@ -403,6 +411,25 @@ export async function getUserByUuid({
         OR
             addresses.id = (SELECT current_address_id FROM user_address) 
     `;
+
+    const tagsQuery = `
+        WITH
+            id_user
+        AS (
+            SELECT id FROM users WHERE uuid = $1
+        )
+        SELECT
+            tags.uuid,
+            tags.name
+        FROM
+            users_tags
+        INNER JOIN
+            tags
+        ON
+            users_tags.tag_id = tags.id
+        WHERE
+            users_tags.user_id = (SELECT id FROM id_user);
+        `;
     try {
         const [
             {
@@ -410,16 +437,21 @@ export async function getUserByUuid({
             },
             { rows: images },
             { rows: addresses },
+            { rows: tags },
         ] = await Promise.all(
-            [basicInformationsQuery, profilePicturesQuery, addressesQuery].map(
-                query => db.query(query, [uuid])
-            )
+            [
+                basicInformationsQuery,
+                profilePicturesQuery,
+                addressesQuery,
+                tagsQuery,
+            ].map(query => db.query(query, [uuid]))
         );
         if (!user || !Array.isArray(images)) return null;
 
         const finalUser = {
             ...user,
             addresses,
+            tags,
             images: images.map(({ src, ...images }) => ({
                 ...images,
                 src: srcToPath(src),
@@ -909,7 +941,7 @@ export async function addTags({
     db,
     uuid: guid,
     tag,
-}: tagsArgs): Promise<string | null> {
+}: TagsArgs): Promise<string | null> {
     const token = uuid();
     const query = `SELECT upsert_tag($1, $3, $2)`;
 
@@ -928,7 +960,7 @@ export async function deleteTags({
     db,
     uuid,
     tag,
-}: tagsArgs): Promise<string | null> {
+}: TagsArgs): Promise<string | null> {
     const query = `SELECT delete_tag($1, $2)`;
 
     try {
@@ -936,6 +968,18 @@ export async function deleteTags({
             rows: [tags],
         } = await db.query(query, [uuid, tag]);
         return tags.delete_tag;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function getTags({ db }: ModelArgs): Promise<Tags[] | null> {
+    const query = `SELECT uuid, name FROM tags`;
+
+    try {
+        const { rows: tags } = await db.query(query);
+        return tags;
     } catch (e) {
         console.error(e);
         return null;

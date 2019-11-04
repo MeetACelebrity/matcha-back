@@ -8,11 +8,13 @@ import {
     updateBiography,
     addTags,
     deleteTags,
+    getTags,
     updateAddress,
 } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { Context } from './../../app';
 import { verify, hash } from 'argon2';
+import { getPackedSettings } from 'http2';
 
 const enum UpdateUserStatusCode {
     DONE = 'DONE',
@@ -385,6 +387,23 @@ export default function setupTextual(router: express.Router) {
             res.json({
                 statusCode: UpdateUserStatusCode.DONE,
             });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.get('/tags', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+
+            const result = await getTags({ db: res.locals.db });
+
+            res.json({ ...result });
         } catch (e) {
             console.error(e);
         }
