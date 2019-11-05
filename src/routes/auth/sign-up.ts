@@ -94,6 +94,7 @@ export default function signUpMiddleware(router: express.Router) {
 
             res.json({
                 statusCode: SignUpStatusCode.DONE,
+                userUuid: result.uuid,
             });
         } catch (e) {
             console.error(e);

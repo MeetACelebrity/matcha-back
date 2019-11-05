@@ -1,7 +1,7 @@
 import { CLOUD_ENDPOINT, PROFILE_PICTURES_BUCKET } from './../constants';
-import { UpdateBiographyArgs } from './../../dist/models/user.d';
 import uuid from 'uuid/v4';
 import { hash } from 'argon2';
+import got from 'got';
 
 import { ModelArgs } from './index';
 
@@ -85,6 +85,7 @@ export interface UpdateAddressArgs extends ModelArgs {
     county: string;
     country: string;
     city: string;
+    auto: boolean;
 }
 
 export interface UpdateLocation extends ModelArgs {
@@ -884,25 +885,38 @@ export async function updateAddress({
     county,
     country,
     city,
+    auto,
 }: UpdateAddressArgs): Promise<String | null> {
     const query = `
         SELECT upsert_addresses($1, $2, $3, $4, $5, $6, $7, $8, $9);
     `;
 
+    let args = [name, administrative, county, country, city];
+
     try {
+        if (auto) {
+            const {
+                body: {
+                    address: {
+                        road,
+                        house_number,
+                        state,
+                        county,
+                        country,
+                        city,
+                    },
+                },
+            } = await got(
+                `https://locationiq.com/v1/reverse_sandbox.php?format=json&lat=${lat}&lon=${long}&accept-language=en`,
+                { json: true }
+            );
+
+            args = [`${house_number} ${road}`, state, county, country, city];
+        }
+
         const {
             rows: [address],
-        } = await db.query(query, [
-            uuid,
-            isPrimary,
-            lat,
-            long,
-            name,
-            administrative,
-            county,
-            country,
-            city,
-        ]);
+        } = await db.query(query, [uuid, isPrimary, lat, long, ...args]);
         return address.upsert_addresses;
     } catch (e) {
         console.error(e);

@@ -324,6 +324,7 @@ export default function setupTextual(router: express.Router) {
                 county: req.body.county,
                 country: req.body.country,
                 city: req.body.city,
+                auto: req.body.auto,
             });
             if (result !== 'DONE') {
                 res.status(404);
@@ -339,6 +340,34 @@ export default function setupTextual(router: express.Router) {
         }
     });
 
+    router.post('/address/position', async (req, res) => {
+        try {
+            const result = await updateAddress({
+                db: res.locals.db,
+                uuid: req.body.uuid,
+                isPrimary: req.body.isPrimary,
+                lat: req.body.lat,
+                long: req.body.long,
+                name: '',
+                administrative: '',
+                county: '',
+                country: '',
+                city: '',
+                auto: true,
+            });
+            if (result !== 'DONE') {
+                res.status(404);
+                console.log('result null');
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
     router.put('/tags/add', async (req, res) => {
         try {
             const { user }: Context = res.locals;
