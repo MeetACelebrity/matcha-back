@@ -74,8 +74,9 @@ CREATE TABLE "extended_profiles" (
 CREATE TABLE "profile_pictures" (
   "id" SERIAL PRIMARY KEY,
   "image_id" int UNIQUE NOT NULL,
-  "user_id" int UNIQUE NOT NULL,
-  "image_nb" int UNIQUE NOT NULL
+  "user_id" int NOT NULL,
+  "image_nb" int UNIQUE NOT NULL,
+  UNIQUE (user_id, image_nb)
 );
 
 CREATE TABLE "images" (
