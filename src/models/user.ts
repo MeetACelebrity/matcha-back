@@ -894,6 +894,7 @@ export async function updateAddress({
     let args = [name, administrative, county, country, city];
 
     try {
+        console.log('lat: ', lat, ' | long: ', long);
         if (auto) {
             const {
                 body: {
@@ -911,7 +912,15 @@ export async function updateAddress({
                 { json: true }
             );
 
-            args = [`${house_number} ${road}`, state, county, country, city];
+            args = [
+                `${
+                    house_number === undefined ? '' : `${house_number} `
+                }${road}`,
+                state,
+                county,
+                country,
+                city,
+            ];
         }
 
         const {
