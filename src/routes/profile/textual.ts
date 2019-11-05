@@ -6,10 +6,12 @@ import {
     updatePasswordUser,
     updateExtendedUser,
     updateBiography,
+    updateAddress,
+    updateLocation,
+    updateRoaming,
     addTags,
     deleteTags,
     getTags,
-    updateAddress,
 } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { Context } from './../../app';
@@ -345,13 +347,64 @@ export default function setupTextual(router: express.Router) {
                 res.sendStatus(404);
                 return;
             }
-            console.log(req.body.tag);
             const result = await addTags({
                 db: res.locals.db,
                 uuid: user.uuid,
                 tag: req.body.tag,
             });
             if (result !== 'DONE') {
+                res.status(404);
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.put('/location', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            const result = await updateLocation({
+                db: res.locals.db,
+                uuid: user.uuid,
+                value: req.body.acceptGeolocation,
+            });
+            if (result === null) {
+                res.status(404);
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.put('/roaming', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            const result = await updateRoaming({
+                db: res.locals.db,
+                uuid: user.uuid,
+                value: req.body.value,
+            });
+            if (result === null) {
                 res.status(404);
                 res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
                 return;
@@ -403,7 +456,7 @@ export default function setupTextual(router: express.Router) {
 
             const result = await getTags({ db: res.locals.db });
 
-            res.json({ ...result });
+            res.json(result);
         } catch (e) {
             console.error(e);
         }

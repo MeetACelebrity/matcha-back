@@ -11,6 +11,7 @@ export interface CreateUserArgs extends ModelArgs {
     givenName: string;
     familyName: string;
     password: string;
+    acceptGeolocation: Boolean;
 }
 
 export interface GetUserByUsernameArgs extends ModelArgs {
@@ -86,6 +87,16 @@ export interface UpdateAddressArgs extends ModelArgs {
     city: string;
 }
 
+export interface UpdateLocation extends ModelArgs {
+    uuid: string;
+    value: boolean;
+}
+
+export interface UpdateRoaming extends ModelArgs {
+    uuid: string;
+    value: Roaming;
+}
+
 export interface InsertPicsArgs extends ModelArgs {
     uuid1: string;
     newPics: string;
@@ -111,6 +122,12 @@ export enum SexualOrientation {
     'HETEROSEXUAL',
     'HOMOSEXUAL',
     'BISEXUAL',
+}
+
+export enum Roaming {
+    'ACCEPTED',
+    'REFUSED',
+    'NOT_SET',
 }
 
 export interface Image {
@@ -152,6 +169,8 @@ export interface ExternalUser {
     gender?: Gender;
     sexualOrientation?: SexualOrientation;
     biography?: string;
+    location: Boolean;
+    roaming: Roaming;
     images: Image[];
     addresses: Addresses[];
     tags: Tags[];
@@ -187,6 +206,8 @@ export function internalUserToExternalUser({
     images,
     addresses,
     tags,
+    location,
+    roaming,
 }: InternalUser): ExternalUser {
     return {
         uuid,
@@ -200,6 +221,8 @@ export function internalUserToExternalUser({
         biography,
         gender,
         sexualOrientation,
+        location,
+        roaming,
         images,
         addresses,
         tags,
@@ -213,6 +236,7 @@ export async function createUser({
     givenName,
     familyName,
     password,
+    acceptGeolocation,
 }: CreateUserArgs): Promise<{ uuid: string; token: string } | null> {
     const id = uuid();
     const token = uuid();
@@ -227,7 +251,8 @@ export async function createUser({
                     username,
                     given_name,
                     family_name,
-                    password
+                    password,
+                    location
                 ) 
                 VALUES (
                     $1,
@@ -235,7 +260,8 @@ export async function createUser({
                     $3,
                     $4,
                     $5,
-                    $6
+                    $6,
+                    $8
                 )
                 RETURNING id
             )
@@ -257,8 +283,8 @@ export async function createUser({
             familyName,
             await hash(password),
             token,
+            acceptGeolocation,
         ]);
-
         return { token, uuid: id };
     } catch (e) {
         console.error(e);
@@ -346,6 +372,8 @@ export async function getUserByUuid({
             users.password,
             users.created_at as "createdAt",
             users.confirmed,
+            users.location,
+            users.roaming,
             extended_profiles.birthday,
             extended_profiles.gender,
             extended_profiles.sexual_orientation as "sexualOrientation",
@@ -420,7 +448,7 @@ export async function getUserByUuid({
         )
         SELECT
             tags.uuid,
-            tags.name
+            tags.name as text
         FROM
             users_tags
         INNER JOIN
@@ -882,6 +910,54 @@ export async function updateAddress({
     }
 }
 
+export async function updateLocation({
+    db,
+    uuid,
+    value,
+}: UpdateLocation): Promise<true | null> {
+    const query = `
+        UPDATE
+            users
+        SET 
+            location = $2
+        WHERE
+            uuid = $1`;
+
+    try {
+        const { rowCount } = await db.query(query, [uuid, value]);
+
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateRoaming({
+    db,
+    uuid,
+    value,
+}: UpdateRoaming): Promise<true | null> {
+    const query = `
+            UPDATE
+                users
+            SET 
+                roaming = $2
+            WHERE
+                uuid = $1`;
+
+    try {
+        const { rowCount } = await db.query(query, [uuid, value]);
+
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 export async function updateProfilePics({
     db,
     uuid1,
@@ -975,7 +1051,7 @@ export async function deleteTags({
 }
 
 export async function getTags({ db }: ModelArgs): Promise<Tags[] | null> {
-    const query = `SELECT uuid, name FROM tags`;
+    const query = `SELECT uuid, name as text FROM tags`;
 
     try {
         const { rows: tags } = await db.query(query);

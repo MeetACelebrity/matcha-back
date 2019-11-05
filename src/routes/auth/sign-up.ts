@@ -27,6 +27,7 @@ const signUpSchema: ValidatorObject = Validator.object().keys({
     givenName: stringSchema,
     familyName: stringSchema,
     password: Validator.string().min(6),
+    acceptGeolocation: Validator.boolean(),
 });
 
 function signUpRouteValidation(req: express.Request): SignUpStatusCode {

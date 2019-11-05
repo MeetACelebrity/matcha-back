@@ -45,6 +45,7 @@ CREATE TABLE "users" (
   "extended_profile" int,
   "confirmed" bool NOT NULL DEFAULT false,
   "roaming" roaming_preferences NOT NULL DEFAULT 'NOT_SET',
+  "location" bool NOT NULL DEFAULT false,
   "primary_address_id" int,
   "current_address_id" int
 );
