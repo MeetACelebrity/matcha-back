@@ -11,6 +11,7 @@ import {
     updateRoaming,
     addTags,
     deleteTags,
+    deleteAddress,
     getTags,
 } from '../../models/user';
 import { Validator, ValidatorObject } from '../../utils/validator';
@@ -312,7 +313,6 @@ export default function setupTextual(router: express.Router) {
                 res.sendStatus(404);
                 return;
             }
-            console.log(req.body);
             const result = await updateAddress({
                 db: res.locals.db,
                 uuid: user.uuid,
@@ -328,7 +328,31 @@ export default function setupTextual(router: express.Router) {
             });
             if (result !== 'DONE') {
                 res.status(404);
-                console.log('result null');
+                res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
+                return;
+            }
+            res.json({
+                statusCode: UpdateUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.delete('/address/delete', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            const result = await deleteAddress({
+                db: res.locals.db,
+                uuid: user.uuid,
+            });
+            if (result === null) {
+                res.status(404);
                 res.json({ statusCode: UpdateUserStatusCode.UNKNOWN_ERROR });
                 return;
             }

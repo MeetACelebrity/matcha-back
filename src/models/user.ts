@@ -88,6 +88,10 @@ export interface UpdateAddressArgs extends ModelArgs {
     auto: boolean;
 }
 
+export interface DeleteAddressArgs extends ModelArgs {
+    uuid: string;
+}
+
 export interface UpdateLocation extends ModelArgs {
     uuid: string;
     value: boolean;
@@ -927,6 +931,49 @@ export async function updateAddress({
             rows: [address],
         } = await db.query(query, [uuid, isPrimary, lat, long, ...args]);
         return address.upsert_addresses;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function deleteAddress({
+    db,
+    uuid,
+}: DeleteAddressArgs): Promise<true | null> {
+    try {
+        const query = `
+        WITH
+            id_address
+        AS
+        (
+            SELECT
+                current_address_id
+            FROM
+                users
+            WHERE
+                uuid = $1
+        ),
+            delete_address
+        AS
+        (
+            DELETE FROM
+                addresses
+            WHERE
+                id = (SELECT current_address_id FROM id_address)
+        )
+        UPDATE
+            users
+        SET
+            current_address_id = NULL
+        WHERE
+            uuid = $1
+        
+        `;
+
+        const { rowCount } = await db.query(query, [uuid]);
+        if (rowCount === 0) return null;
+        return true;
     } catch (e) {
         console.error(e);
         return null;
