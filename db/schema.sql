@@ -99,6 +99,18 @@ CREATE TABLE "likes" (
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
+CREATE TABLE "reports" (
+  "reporter" int NOT NULL,
+  "reported" int NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+);
+
+CREATE TABLE "blocks" (
+  "blocker" int NOT NULL,
+  "blocked" int NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+);
+
 CREATE TABLE "visits" (
   "id" SERIAL PRIMARY KEY,
   "visitor" int NOT NULL,
@@ -168,6 +180,14 @@ ALTER TABLE "likes" ADD FOREIGN KEY ("liker") REFERENCES "users" ("id");
 
 ALTER TABLE "likes" ADD FOREIGN KEY ("liked") REFERENCES "users" ("id");
 
+ALTER TABLE "reports" ADD FOREIGN KEY ("reporter") REFERENCES "users" ("id");
+
+ALTER TABLE "reports" ADD FOREIGN KEY ("reported") REFERENCES "users" ("id");
+
+ALTER TABLE "blocks" ADD FOREIGN KEY ("blocker") REFERENCES "users" ("id");
+
+ALTER TABLE "blocks" ADD FOREIGN KEY ("blocked") REFERENCES "users" ("id");
+
 ALTER TABLE "visits" ADD FOREIGN KEY ("visitor") REFERENCES "users" ("id");
 
 ALTER TABLE "visits" ADD FOREIGN KEY ("visited") REFERENCES "users" ("id");
@@ -209,6 +229,10 @@ CREATE UNIQUE INDEX ON "tokens" ("user_id", "type");
 CREATE UNIQUE INDEX ON "tokens" ("token");
 
 CREATE UNIQUE INDEX ON "likes" ("liker", "liked");
+
+CREATE UNIQUE INDEX ON "reports" ("reporter", "reported");
+
+CREATE UNIQUE INDEX ON "blocks" ("blocker", "blocked");
 
 CREATE UNIQUE INDEX ON "messages" ("uuid");
 

@@ -6,6 +6,8 @@ import {
     userLike,
     userSee,
     userUnLike,
+    userBlock,
+    userReport,
 } from '../../models/public-user';
 import { getUserByUuid } from '../../models/user';
 
@@ -99,7 +101,59 @@ export default function publicUser(router: express.Router) {
                 return;
             }
 
-            const result = userSee({
+            const result = await userSee({
+                db: res.locals.db,
+                uuidIn: user.uuid,
+                uuidOut: req.params.uuid,
+            });
+            if (result === null) {
+                res.sendStatus(404);
+                return;
+            }
+            res.json({
+                statusCode: PublicUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.post('/block/:uuid', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+
+            const result = await userBlock({
+                db: res.locals.db,
+                uuidIn: user.uuid,
+                uuidOut: req.params.uuid,
+            });
+            if (result === null) {
+                res.sendStatus(404);
+                return;
+            }
+            res.json({
+                statusCode: PublicUserStatusCode.DONE,
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.post('/report/:uuid', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+
+            const result = await userReport({
                 db: res.locals.db,
                 uuidIn: user.uuid,
                 uuidOut: req.params.uuid,

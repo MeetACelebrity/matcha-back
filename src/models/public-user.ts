@@ -180,3 +180,97 @@ export async function userSee({
         return null;
     }
 }
+
+export async function userBlock({
+    db,
+    uuidIn,
+    uuidOut,
+}: UserLikeArgs): Promise<true | null> {
+    const query = `
+        WITH 
+            blocker_id
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $1
+        ),
+            blocked_id
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $2
+        )
+        INSERT INTO
+            blocks
+        (
+            blocker,
+            blocked
+        )
+        VALUES
+        (
+            (SELECT id FROM blocker_id),
+            (SELECT id FROM blocked_id)
+        )`;
+
+    try {
+        const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function userReport({
+    db,
+    uuidIn,
+    uuidOut,
+}: UserLikeArgs): Promise<true | null> {
+    const query = `
+        WITH 
+            reporter_id
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $1
+        ),
+            reported_id
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $2
+        )
+        INSERT INTO
+            reports
+        (
+            reporter,
+            reported
+        )
+        VALUES
+        (
+            (SELECT id FROM reporter_id),
+            (SELECT id FROM reported_id)
+        )`;
+
+    try {
+        const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
