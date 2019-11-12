@@ -919,7 +919,7 @@ export async function updateAddress({
             args = [
                 `${
                     house_number === undefined ? '' : `${house_number} `
-                }${road}`,
+                }${road === undefined ? '' : `${road}` }`,
                 state,
                 county,
                 country,
