@@ -210,8 +210,6 @@ CREATE UNIQUE INDEX ON "tokens" ("token");
 
 CREATE UNIQUE INDEX ON "likes" ("liker", "liked");
 
-CREATE INDEX ON "visits" ("visitor", "visited");
-
 CREATE UNIQUE INDEX ON "messages" ("uuid");
 
 CREATE UNIQUE INDEX ON "conversations" ("uuid");
