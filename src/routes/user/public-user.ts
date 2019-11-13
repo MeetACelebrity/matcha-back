@@ -33,7 +33,7 @@ export default function publicUser(router: express.Router) {
                 res.sendStatus(404);
                 return;
             }
-            res.json(internalUserToPublicUser(user));
+            res.json(internalUserToPublicUser(searchUser));
         } catch (e) {
             console.error(e);
         }
