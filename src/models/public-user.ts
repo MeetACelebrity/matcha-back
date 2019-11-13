@@ -224,7 +224,7 @@ export async function userUnLike({
 }: UserLikeArgs): Promise<true | null> {
     const query = `
     WITH 
-        liker_id
+        user_id
     AS (
         SELECT
             id
@@ -233,7 +233,16 @@ export async function userUnLike({
         WHERE
             uuid = $1
     ),
-    liked_id
+        liker_id
+    AS (
+        SELECT
+            (SELECT id FROM user_id) as id
+        FROM
+            profile_pictures
+        WHERE
+            user_id = (SELECT id FROM user_id)
+    ),
+        liked_id
     AS (
         SELECT
             id
