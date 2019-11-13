@@ -3,6 +3,13 @@ import { ModelArgs } from './index';
 
 export type PublicUser = Omit<ExternalUser, 'email' | 'roaming'>;
 
+export interface HistoryUser {
+    username: string;
+    uuid: string;
+    createdAt: string;
+    src: string | null;
+}
+
 export interface UserLikeArgs extends ModelArgs {
     uuidIn: string;
     uuidOut: string;
@@ -52,7 +59,7 @@ export function internalUserToPublicUser({
 export async function getVisitorsByUuid({
     db,
     uuid,
-}: GetUsersArgs): Promise<object | null> {
+}: GetUsersArgs): Promise<HistoryUser[] | null> {
     const query = `
     SELECT
         users.username, 
@@ -94,6 +101,58 @@ export async function getVisitorsByUuid({
 
         return visitors.map(({ src, ...visitors }) => ({
             ...visitors,
+            src: src === null ? null : srcToPath(src),
+        }));
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function getLikerByUuid({
+    db,
+    uuid,
+}: GetUsersArgs): Promise<HistoryUser[] | null> {
+    const query = `
+        SELECT
+            users.username, 
+            users.uuid, 
+            likes.created_at as "createdAt",
+            (
+                SELECT 
+                    images.src 
+                FROM 
+                    images 
+                INNER JOIN 
+                    profile_pictures 
+                ON 
+                    images.id = profile_pictures.image_id 
+                WHERE 
+                    profile_pictures.user_id = users.id
+                AND 
+                    profile_pictures.image_nb = 0
+            ) as src
+        FROM
+            likes 
+        INNER JOIN
+            users
+        ON 
+            likes.liker = users.id 
+        WHERE
+            likes.liked = (
+                SELECT
+                    id
+                FROM
+                    users
+                WHERE
+                    uuid = $1
+            )`;
+    try {
+        const { rows: liker } = await db.query(query, [uuid]);
+        console.log(liker);
+
+        return liker.map(({ src, ...liker }) => ({
+            ...liker,
             src: src === null ? null : srcToPath(src),
         }));
     } catch (e) {

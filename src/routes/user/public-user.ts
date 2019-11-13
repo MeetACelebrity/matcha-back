@@ -4,6 +4,7 @@ import { Context } from './../../app';
 import {
     internalUserToPublicUser,
     getVisitorsByUuid,
+    getLikerByUuid,
     userLike,
     userSee,
     userUnLike,
@@ -58,6 +59,29 @@ export default function publicUser(router: express.Router) {
                 return;
             }
             res.json({ visitors });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.get('/likes/history', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            const liker = await getLikerByUuid({
+                db: res.locals.db,
+                uuid: user.uuid,
+            });
+
+            if (liker === null) {
+                res.sendStatus(404);
+                return;
+            }
+            res.json({ liker });
         } catch (e) {
             console.error(e);
         }
