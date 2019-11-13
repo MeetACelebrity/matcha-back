@@ -31,10 +31,17 @@ export default function publicUser(router: express.Router) {
                 uuid: req.params.uuid,
             });
 
-            if (searchUser === null) {
+            const seeUser = await userSee({
+                db: res.locals.db,
+                uuidIn: user.uuid,
+                uuidOut: req.params.uuid,
+            });
+
+            if (searchUser === null || seeUser === null) {
                 res.sendStatus(404);
                 return;
             }
+
             res.json(internalUserToPublicUser(searchUser));
         } catch (e) {
             console.error(e);
