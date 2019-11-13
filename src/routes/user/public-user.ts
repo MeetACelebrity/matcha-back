@@ -3,6 +3,7 @@ import { Context } from './../../app';
 
 import {
     internalUserToPublicUser,
+    getVisitorsByUuid,
     userLike,
     userSee,
     userUnLike,
@@ -34,6 +35,29 @@ export default function publicUser(router: express.Router) {
                 return;
             }
             res.json(internalUserToPublicUser(searchUser));
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
+    router.get('/visits/history', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            const visitors = await getVisitorsByUuid({
+                db: res.locals.db,
+                uuid: user.uuid,
+            });
+
+            if (visitors === null) {
+                res.sendStatus(404);
+                return;
+            }
+            res.json({ visitors });
         } catch (e) {
             console.error(e);
         }

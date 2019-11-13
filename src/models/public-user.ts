@@ -1,4 +1,4 @@
-import { InternalUser, ExternalUser } from './user';
+import { InternalUser, ExternalUser, srcToPath } from './user';
 import { ModelArgs } from './index';
 
 export type PublicUser = Omit<ExternalUser, 'email' | 'roaming'>;
@@ -6,6 +6,10 @@ export type PublicUser = Omit<ExternalUser, 'email' | 'roaming'>;
 export interface UserLikeArgs extends ModelArgs {
     uuidIn: string;
     uuidOut: string;
+}
+
+export interface GetUsersArgs extends ModelArgs {
+    uuid: string;
 }
 
 export function internalUserToPublicUser({
@@ -43,6 +47,59 @@ export function internalUserToPublicUser({
         addresses,
         tags,
     };
+}
+
+export async function getVisitorsByUuid({
+    db,
+    uuid,
+}: GetUsersArgs): Promise<object | null> {
+    const query = `
+    SELECT
+        users.username, 
+        users.uuid, 
+        visits.created_at as "createdAt",
+        (
+            SELECT 
+                images.src 
+            FROM 
+                images 
+            INNER JOIN 
+                profile_pictures 
+            ON 
+                images.id = profile_pictures.image_id 
+            WHERE 
+                profile_pictures.user_id = users.id
+            AND 
+                profile_pictures.image_nb = 0
+        ) as src
+    FROM
+        visits 
+    INNER JOIN
+        users
+    ON 
+        visits.visitor = users.id 
+    WHERE
+        visits.visited = (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $1
+        )
+    `;
+    try {
+        const { rows: visitors } = await db.query(query, [uuid]);
+        console.log(visitors);
+
+        return visitors.map(({ src, ...visitors }) => ({
+            ...visitors,
+            src: src === null ? null : srcToPath(src),
+        }));
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
 }
 
 export async function userLike({
