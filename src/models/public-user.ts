@@ -1,7 +1,9 @@
 import { InternalUser, ExternalUser, srcToPath } from './user';
 import { ModelArgs } from './index';
 
-export type PublicUser = Omit<ExternalUser, 'email' | 'roaming'>;
+export interface PublicUser extends Omit<ExternalUser, 'email' | 'roaming'> {
+    isLiker: Boolean;
+}
 
 export interface HistoryUser {
     username: string;
@@ -55,6 +57,7 @@ export function internalUserToPublicUser({
         images,
         addresses,
         tags,
+        isLiker: false,
     };
 }
 
@@ -293,7 +296,7 @@ export async function userSee({
     db,
     uuidIn,
     uuidOut,
-}: UserLikeArgs): Promise<true | null> {
+}: UserLikeArgs): Promise<{ liker: number } | null> {
     const query = `
         WITH 
             visitor_id
@@ -324,12 +327,24 @@ export async function userSee({
         (
             (SELECT id FROM visitor_id),
             (SELECT id FROM visited_id)
-        )`;
+        )
+        RETURNING
+            (
+                SELECT
+                    liker
+                FROM
+                    likes
+                WHERE
+                    liker = (SELECT id FROM visited_id)
+                AND
+                    liked = (SELECT id FROM visitor_id)
+            )`;
 
     try {
-        const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
-        if (rowCount === 0) return null;
-        return true;
+        const {
+            rows: [liked],
+        } = await db.query(query, [uuidIn, uuidOut]);
+        return liked;
     } catch (e) {
         console.error(e);
         return null;

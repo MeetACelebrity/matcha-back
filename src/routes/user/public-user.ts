@@ -37,12 +37,15 @@ export default function publicUser(router: express.Router) {
                 uuidOut: req.params.uuid,
             });
 
+            console.log('see user', seeUser);
             if (searchUser === null || seeUser === null) {
                 res.sendStatus(404);
                 return;
             }
-
-            res.json(internalUserToPublicUser(searchUser));
+            res.json({
+                ...internalUserToPublicUser(searchUser),
+                isLiker: seeUser.liker ? true : false,
+            });
         } catch (e) {
             console.error(e);
         }
@@ -59,8 +62,8 @@ export default function publicUser(router: express.Router) {
             const visitors = await getVisitorsByUuid({
                 db: res.locals.db,
                 uuid: user.uuid,
-                limit: parseInt(req.params.limit, 10),
-                offset: parseInt(req.params.offset, 10),
+                limit: Number(req.params.limit),
+                offset: Number(req.params.offset),
             });
 
             if (visitors === null) {
@@ -84,8 +87,8 @@ export default function publicUser(router: express.Router) {
             const liker = await getLikerByUuid({
                 db: res.locals.db,
                 uuid: user.uuid,
-                limit: parseInt(req.params.limit, 10),
-                offset: parseInt(req.params.offset, 10),
+                limit: Number(req.params.limit),
+                offset: Number(req.params.offset),
             });
 
             if (liker === null) {
