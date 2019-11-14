@@ -17,6 +17,8 @@ export interface UserLikeArgs extends ModelArgs {
 
 export interface GetUsersArgs extends ModelArgs {
     uuid: string;
+    limit: number;
+    offset: number;
 }
 
 export function internalUserToPublicUser({
@@ -59,6 +61,8 @@ export function internalUserToPublicUser({
 export async function getVisitorsByUuid({
     db,
     uuid,
+    limit,
+    offset,
 }: GetUsersArgs): Promise<HistoryUser[] | null> {
     const query = `
     SELECT
@@ -94,9 +98,16 @@ export async function getVisitorsByUuid({
             WHERE
                 uuid = $1
         )
+    ORDER BY
+        visits.created_at
+    DESC
+    LIMIT 
+        $2
+    OFFSET
+        $3
     `;
     try {
-        const { rows: visitors } = await db.query(query, [uuid]);
+        const { rows: visitors } = await db.query(query, [uuid, limit, offset]);
         console.log(visitors);
 
         return visitors.map(({ src, ...visitors }) => ({
@@ -112,6 +123,8 @@ export async function getVisitorsByUuid({
 export async function getLikerByUuid({
     db,
     uuid,
+    limit,
+    offset,
 }: GetUsersArgs): Promise<HistoryUser[] | null> {
     const query = `
         SELECT
@@ -146,9 +159,16 @@ export async function getLikerByUuid({
                     users
                 WHERE
                     uuid = $1
-            )`;
+            )
+        ORDER BY
+            likes.created_at
+        DESC
+        LIMIT 
+            $2
+        OFFSET
+            $3`;
     try {
-        const { rows: liker } = await db.query(query, [uuid]);
+        const { rows: liker } = await db.query(query, [uuid, limit, offset]);
         console.log(liker);
 
         return liker.map(({ src, ...liker }) => ({
@@ -205,7 +225,8 @@ export async function userLike({
         (
             (SELECT id FROM liker_id),
             (SELECT id FROM liked_id)
-        )`;
+        )
+        `;
 
     try {
         const { rowCount } = await db.query(query, [uuidIn, uuidOut]);

@@ -48,7 +48,7 @@ export default function publicUser(router: express.Router) {
         }
     });
 
-    router.get('/visits/history', async (req, res) => {
+    router.get('/visits/history/:limit/:offset', async (req, res) => {
         try {
             const { user }: Context = res.locals;
 
@@ -59,6 +59,8 @@ export default function publicUser(router: express.Router) {
             const visitors = await getVisitorsByUuid({
                 db: res.locals.db,
                 uuid: user.uuid,
+                limit: parseInt(req.params.limit, 10),
+                offset: parseInt(req.params.offset, 10),
             });
 
             if (visitors === null) {
@@ -71,7 +73,7 @@ export default function publicUser(router: express.Router) {
         }
     });
 
-    router.get('/likes/history', async (req, res) => {
+    router.get('/likes/history/:limit/:offset', async (req, res) => {
         try {
             const { user }: Context = res.locals;
 
@@ -82,6 +84,8 @@ export default function publicUser(router: express.Router) {
             const liker = await getLikerByUuid({
                 db: res.locals.db,
                 uuid: user.uuid,
+                limit: parseInt(req.params.limit, 10),
+                offset: parseInt(req.params.offset, 10),
             });
 
             if (liker === null) {
@@ -131,32 +135,6 @@ export default function publicUser(router: express.Router) {
             }
 
             const result = await userUnLike({
-                db: res.locals.db,
-                uuidIn: user.uuid,
-                uuidOut: req.params.uuid,
-            });
-            if (result === null) {
-                res.sendStatus(404);
-                return;
-            }
-            res.json({
-                statusCode: PublicUserStatusCode.DONE,
-            });
-        } catch (e) {
-            console.error(e);
-        }
-    });
-
-    router.post('/see/:uuid', async (req, res) => {
-        try {
-            const { user }: Context = res.locals;
-
-            if (user === null) {
-                res.sendStatus(404);
-                return;
-            }
-
-            const result = await userSee({
                 db: res.locals.db,
                 uuidIn: user.uuid,
                 uuidOut: req.params.uuid,

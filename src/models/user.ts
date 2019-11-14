@@ -917,9 +917,9 @@ export async function updateAddress({
             );
 
             args = [
-                `${
-                    house_number === undefined ? '' : `${house_number} `
-                }${road === undefined ? '' : `${road}` }`,
+                `${house_number === undefined ? '' : `${house_number} `}${
+                    road === undefined ? '' : `${road}`
+                }`,
                 state,
                 county,
                 country,
@@ -1036,6 +1036,7 @@ export async function updateProfilePics({
     const uuid2 = uuid();
     const query = `SELECT upsert_profile_picture($1, $2, $3)`;
     try {
+        console.log('1 ', uuid1, '| 2 ', uuid2, ' | pic ', newPics);
         const {
             rows: [image],
         } = await db.query(query, [uuid1, newPics, uuid2]);
