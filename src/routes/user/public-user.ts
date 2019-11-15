@@ -70,6 +70,7 @@ export default function publicUser(router: express.Router) {
                 res.sendStatus(404);
                 return;
             }
+            console.log(visitors);
             res.json({ visitors });
         } catch (e) {
             console.error(e);

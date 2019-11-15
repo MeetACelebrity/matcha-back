@@ -66,9 +66,10 @@ export async function getVisitorsByUuid({
     uuid,
     limit,
     offset,
-}: GetUsersArgs): Promise<HistoryUser[] | null> {
+}: GetUsersArgs): Promise<{ data: HistoryUser[]; hasMore: Boolean } | null> {
     const query = `
     SELECT
+        count(*) OVER() as "size",
         users.username, 
         users.uuid, 
         visits.created_at as "createdAt",
@@ -111,12 +112,16 @@ export async function getVisitorsByUuid({
     `;
     try {
         const { rows: visitors } = await db.query(query, [uuid, limit, offset]);
-        console.log(visitors);
 
-        return visitors.map(({ src, ...visitors }) => ({
-            ...visitors,
+        const hasMore = visitors[0].size - offset - limit > 0 ? true : false;
+        const data = visitors.map(({ src, username, uuid, createdAt }) => ({
+            username,
+            uuid,
+            createdAt,
             src: src === null ? null : srcToPath(src),
         }));
+
+        return { data, hasMore };
     } catch (e) {
         console.error(e);
         return null;
@@ -128,7 +133,7 @@ export async function getLikerByUuid({
     uuid,
     limit,
     offset,
-}: GetUsersArgs): Promise<HistoryUser[] | null> {
+}: GetUsersArgs): Promise<{ data: HistoryUser[]; hasMore: Boolean } | null> {
     const query = `
         SELECT
             users.username, 
@@ -172,12 +177,16 @@ export async function getLikerByUuid({
             $3`;
     try {
         const { rows: liker } = await db.query(query, [uuid, limit, offset]);
-        console.log(liker);
 
-        return liker.map(({ src, ...liker }) => ({
-            ...liker,
+        const hasMore = liker[0].size - offset - limit > 0 ? true : false;
+        const data = liker.map(({ src, username, uuid, createdAt }) => ({
+            username,
+            uuid,
+            createdAt,
             src: src === null ? null : srcToPath(src),
         }));
+
+        return { data, hasMore };
     } catch (e) {
         console.error(e);
         return null;
