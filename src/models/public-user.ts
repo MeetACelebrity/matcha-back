@@ -26,6 +26,7 @@ export interface GetUsersArgs extends ModelArgs {
 export function internalUserToPublicUser({
     id,
     uuid,
+    score,
     givenName,
     familyName,
     username,
@@ -44,6 +45,7 @@ export function internalUserToPublicUser({
 }: InternalUser): PublicUser {
     return {
         uuid,
+        score,
         givenName,
         familyName,
         username,

@@ -168,6 +168,7 @@ export interface ExternalUser {
     familyName: string;
     username: string;
     email: string;
+    score: number;
     createdAt: string;
     confirmed: boolean;
     birthday?: number;
@@ -198,6 +199,7 @@ export function srcToPath(src: string) {
 export function internalUserToExternalUser({
     id,
     uuid,
+    score,
     givenName,
     familyName,
     username,
@@ -216,6 +218,7 @@ export function internalUserToExternalUser({
 }: InternalUser): ExternalUser {
     return {
         uuid,
+        score,
         givenName,
         familyName,
         username,

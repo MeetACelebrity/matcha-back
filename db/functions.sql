@@ -428,3 +428,70 @@ CREATE OR REPLACE FUNCTION delete_tag("uuid" uuid, "tag" text) RETURNS text AS $
         RETURN 'DONE';
     END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION distance("me_id" int, "user_id" int) RETURNS float AS $$
+    DECLARE
+        me_info record;
+        user_info record;
+    BEGIN
+    
+    -- Get position of loggued user
+        SELECT
+            addresses.point
+        INTO
+            me_info
+        FROM
+            addresses
+        WHERE
+            id = (
+                SELECT
+                    (
+                        CASE WHEN 
+                            (current_address_id IS NULL)
+                        THEN
+                            primary_address_id
+                        ELSE
+                            current_address_id
+                        END
+                    )
+                FROM
+                    users
+                WHERE
+                    id = $1
+            );        
+
+    -- Get position of user
+        SELECT
+            addresses.point
+        INTO
+            user_info
+        FROM
+            addresses
+        WHERE
+            id = (
+                SELECT
+                    (
+                        CASE WHEN 
+                            (current_address_id IS NULL)
+                        THEN
+                            primary_address_id
+                        ELSE
+                            current_address_id
+                        END
+                    )
+                FROM
+                    users
+                WHERE
+                    id = $2
+            );     
+    
+    -- Retun Distance
+
+    RETURN ( SELECT
+                point(me_info.point[1], me_info.point[0])
+                <@>
+                point(user_info.point[1], user_info.point[0])
+            );
+
+    END;
+$$ LANGUAGE plpgsql
