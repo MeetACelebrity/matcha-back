@@ -429,7 +429,41 @@ CREATE OR REPLACE FUNCTION delete_tag("uuid" uuid, "tag" text) RETURNS text AS $
     END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURN int AS $$
+    DECLARE
+        me_info record;
+        user_info record;
+    BEGIN
+    
+    -- Get gender, sexual_orientation, age of logged user in 'me'
+        SELECT
+            gender,
+            sexual_orientation
+        INTO
+            me_info
+        FROM
+            extended_profiles
+        WHERE
+            extended_profiles.user_id = $1;
 
+ 
+    -- Get gender, sexual_orientation, age of logged user in 'me'
+        SELECT
+            gender,
+            sexual_orientation,
+            EXTRACT(year FROM AGE(extended_profiles.birthday)) as AGE
+        INTO
+            user_info
+        FROM
+            extended_profiles
+        WHERE
+            extended_profiles.user_id = $2;
+
+    -- Check if user match (if its the case return age, else return 0)
+        
+
+    END;
+$$ LANGUAGE plpgsql
 
 
 CREATE OR REPLACE FUNCTION distance("me_id" int, "user_id" int) RETURNS float AS $$
