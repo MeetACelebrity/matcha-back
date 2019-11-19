@@ -429,6 +429,9 @@ CREATE OR REPLACE FUNCTION delete_tag("uuid" uuid, "tag" text) RETURNS text AS $
     END;
 $$ LANGUAGE plpgsql;
 
+
+
+
 CREATE OR REPLACE FUNCTION distance("me_id" int, "user_id" int) RETURNS float AS $$
     DECLARE
         me_info record;
@@ -493,5 +496,68 @@ CREATE OR REPLACE FUNCTION distance("me_id" int, "user_id" int) RETURNS float AS
                 point(user_info.point[1], user_info.point[0])
             );
 
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION common_tags("me_id" int, "user_id" int) RETURNS int AS $$
+    BEGIN
+
+    -- Get tags of loggued user
+    CREATE TEMP TABLE me_info ON COMMIT DROP AS
+        SELECT
+            strip(tsvector) as tsvector,
+            count(strip(tsvector))
+        FROM 
+            tags
+        INNER JOIN
+            users_tags
+        ON
+            users_tags.tag_id = tags.id
+        WHERE
+             users_tags.user_id = $1
+        GROUP BY
+            strip(tsvector);
+
+    -- Get tags of user
+     CREATE TEMP TABLE user_info ON COMMIT DROP AS
+        SELECT
+            strip(tsvector) as tsvector,
+            count(strip(tsvector))
+        FROM 
+            tags
+        INNER JOIN
+            users_tags
+        ON
+            users_tags.tag_id = tags.id
+        WHERE
+             users_tags.user_id = $2
+        GROUP BY
+            strip(tsvector);
+
+    -- Get common tags of tow user
+    CREATE TEMP TABLE common_tag ON COMMIT DROP AS
+        WITH 
+            unified AS (
+                SELECT
+                    tsvector
+                FROM
+                    me_info
+                UNION ALL
+                SELECT
+                    tsvector
+                FROM
+                    user_info
+            )
+        SELECT
+            strip(tsvector),
+            count(*)
+        FROM
+            unified
+        GROUP BY
+            strip
+        HAVING
+            count(*) > 1;
+
+        RETURN (select count(*) from common_tag);
     END;
 $$ LANGUAGE plpgsql
