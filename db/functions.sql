@@ -587,9 +587,11 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION common_tags("me_id" int, "user_id" int) RETURNS int AS $$
     BEGIN
-
+    DROP TABLE IF EXISTS me_info_table;
+    DROP TABLE IF EXISTS user_info_table;
+    DROP TABLE IF EXISTS common_tag;
     -- Get tags of loggued user
-    CREATE TEMP TABLE me_info ON COMMIT DROP AS
+    CREATE TEMP TABLE me_info_table ON COMMIT DROP AS
         SELECT
             strip(tsvector) as tsvector,
             count(strip(tsvector))
@@ -605,7 +607,7 @@ CREATE OR REPLACE FUNCTION common_tags("me_id" int, "user_id" int) RETURNS int A
             strip(tsvector);
 
     -- Get tags of user
-     CREATE TEMP TABLE user_info ON COMMIT DROP AS
+     CREATE TEMP TABLE user_info_table ON COMMIT DROP AS
         SELECT
             strip(tsvector) as tsvector,
             count(strip(tsvector))
@@ -627,12 +629,12 @@ CREATE OR REPLACE FUNCTION common_tags("me_id" int, "user_id" int) RETURNS int A
                 SELECT
                     tsvector
                 FROM
-                    me_info
+                    me_info_table
                 UNION ALL
                 SELECT
                     tsvector
                 FROM
-                    user_info
+                    user_info_table
             )
         SELECT
             strip(tsvector),
@@ -732,5 +734,52 @@ CREATE OR REPLACE FUNCTION is_not_interested("me_id" int, "user_id" int) RETURNS
         ELSE
             RETURN FALSE;
         END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid) RETURNS TABLE (
+            "uuid" uuid, 
+            "username" text,
+            "givenNaqme" text, 
+            "familyName" text,
+            "distance" float,
+            "commonTags" int,
+            "score" int
+            ) AS $$
+    DECLARE
+        me_info record;
+    BEGIN
+    -- Get current users
+        SELECT
+            *
+        INTO
+            me_info
+        FROM
+            users
+        WHERE
+            users.uuid = $1;
+    -- Get proposals
+        RETURN QUERY
+        SELECT
+            users.uuid,
+            users.username,
+            users.given_name as "givenName",
+            users.family_name as "familyName",
+            distance(1, users.id) as "distance",
+            common_tags(1, users.id) as "commonTags",
+            users.score
+        FROM
+            users
+        WHERE
+            users.id != 1
+        AND
+            users.confirmed = TRUE
+        AND
+            researched_sex(1, users.id) > 0
+        ORDER BY
+            distance,
+            "commonTags",
+            score;
+
     END;
 $$ LANGUAGE plpgsql;
