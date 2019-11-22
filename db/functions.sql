@@ -1,3 +1,4 @@
+-- Pictures 
 CREATE OR REPLACE FUNCTION upsert_profile_picture(uuid1 uuid, new_pics text, uuid2 uuid) RETURNS text AS $$
     DECLARE
         id_user users%ROWTYPE;
@@ -228,96 +229,8 @@ CREATE OR REPLACE FUNCTION delete_picture(uuid1 uuid, uuid2 uuid) RETURNS text A
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "lat"  double precision, "long"  double precision, "name" text, "administrative" text, "county" text, "country" text, "city" text) RETURNS text AS $$
-    DECLARE
-        id_user record;
-        id_addresses addresses%ROWTYPE;
-        address_field text;
-        address_type address_type;
-    BEGIN
-    -- Determin the address_field that we need to use
-        IF is_primary THEN
-            address_field := 'primary_address_id';
-            address_type := 'PRIMARY';
-        ELSE
-            address_field := 'current_address_id';
-            address_type := 'CURRENT';
-        END IF;
 
-    -- Get user id and address_field id
-        EXECUTE format('
-            SELECT
-                id,
-                %I as "address_field"
-            FROM
-                users
-            WHERE
-                users.uuid = %L', address_field, uuid)
-        INTO
-            id_user;
-    -- Set upsert: if address_field is no null update, else insert
-    
-        IF id_user.address_field IS NOT NULL THEN
-            UPDATE
-                addresses 
-            SET
-                point = POINT($3 ,$4),
-                name = $5,
-                administrative = $6,
-                county = $7,
-                country = $8,
-                city = $9
-            WHERE
-                id_user.address_field = addresses.id;
-        ELSE
-            EXECUTE format('
-                INSERT INTO
-                    addresses 
-                (   
-                    point, 
-                    name, 
-                    administrative, 
-                    county, 
-                    country, 
-                    city,
-                    type
-                )
-                VALUES 
-                (
-                    POINT(%L, %L),
-                    %L,
-                    %L,
-                    %L,
-                    %L,
-                    %L,
-                    %L
-                )
-                RETURNING
-                    id ',
-                    lat,
-                    long,
-                    name,
-                    administrative,
-                    county,
-                    country,
-                    city,
-                    address_type
-            )
-            INTO
-                id_addresses;
-            
-            EXECUTE format('UPDATE  
-                users
-            SET
-                %I = %L
-            WHERE
-                users.id = %L', address_field, id_addresses.id, id_user.id);
-        END IF;
-
-        RETURN 'DONE';
-    END;
-$$ LANGUAGE plpgsql;
-
+-- Tags
 CREATE OR REPLACE FUNCTION upsert_tag("uuid" uuid, "token" uuid, "tag" text) RETURNS text AS $$
     DECLARE
         id_user record;
@@ -429,16 +342,101 @@ CREATE OR REPLACE FUNCTION delete_tag("uuid" uuid, "tag" text) RETURNS text AS $
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION inv_gender("gender" gender) RETURNS gender AS $$
+
+-- Addresses
+CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "lat"  double precision, "long"  double precision, "name" text, "administrative" text, "county" text, "country" text, "city" text) RETURNS text AS $$
+    DECLARE
+        id_user record;
+        id_addresses addresses%ROWTYPE;
+        address_field text;
+        address_type address_type;
     BEGIN
-        IF $1 = 'MALE' THEN
-            RETURN 'FEMALE';
+    -- Determin the address_field that we need to use
+        IF is_primary THEN
+            address_field := 'primary_address_id';
+            address_type := 'PRIMARY';
         ELSE
-            RETURN 'MALE';
+            address_field := 'current_address_id';
+            address_type := 'CURRENT';
         END IF;
+
+    -- Get user id and address_field id
+        EXECUTE format('
+            SELECT
+                id,
+                %I as "address_field"
+            FROM
+                users
+            WHERE
+                users.uuid = %L', address_field, uuid)
+        INTO
+            id_user;
+    -- Set upsert: if address_field is no null update, else insert
+    
+        IF id_user.address_field IS NOT NULL THEN
+            UPDATE
+                addresses 
+            SET
+                point = POINT($3 ,$4),
+                name = $5,
+                administrative = $6,
+                county = $7,
+                country = $8,
+                city = $9
+            WHERE
+                id_user.address_field = addresses.id;
+        ELSE
+            EXECUTE format('
+                INSERT INTO
+                    addresses 
+                (   
+                    point, 
+                    name, 
+                    administrative, 
+                    county, 
+                    country, 
+                    city,
+                    type
+                )
+                VALUES 
+                (
+                    POINT(%L, %L),
+                    %L,
+                    %L,
+                    %L,
+                    %L,
+                    %L,
+                    %L
+                )
+                RETURNING
+                    id ',
+                    lat,
+                    long,
+                    name,
+                    administrative,
+                    county,
+                    country,
+                    city,
+                    address_type
+            )
+            INTO
+                id_addresses;
+            
+            EXECUTE format('UPDATE  
+                users
+            SET
+                %I = %L
+            WHERE
+                users.id = %L', address_field, id_addresses.id, id_user.id);
+        END IF;
+
+        RETURN 'DONE';
     END;
 $$ LANGUAGE plpgsql;
 
+
+
+-- Proposals
 CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS int AS $$
     DECLARE
         me_info record;
@@ -466,9 +464,9 @@ CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS in
                 blocked = $1
         );
 
-    IF is_block IS NOT NULL THEN
-        RETURN 0;
-    END IF;
+        IF is_block IS NOT NULL THEN
+            RETURN 0;
+        END IF;
 
 
     -- Get gender, sexual_orientation, age of logged user in 'me'
@@ -519,8 +517,6 @@ CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS in
     END CASE;
     END;
 $$ LANGUAGE plpgsql;
-
-
 
 CREATE OR REPLACE FUNCTION distance("me_id" int, "user_id" int) RETURNS float AS $$
     DECLARE
@@ -650,4 +646,91 @@ CREATE OR REPLACE FUNCTION common_tags("me_id" int, "user_id" int) RETURNS int A
 
         RETURN (select count(*) from common_tag);
     END;
-$$ LANGUAGE plpgsql
+$$ LANGUAGE plpgsql;
+
+
+-- Utils 
+CREATE OR REPLACE FUNCTION inv_gender("gender" gender) RETURNS gender AS $$
+    BEGIN
+        IF $1 = 'MALE' THEN
+            RETURN 'FEMALE';
+        ELSE
+            RETURN 'MALE';
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION is_liked("me_id" int, "user_id" int) RETURNS boolean AS $$
+    DECLARE
+        liked_person record;
+    BEGIN
+        SELECT
+            *
+        INTO
+            liked_person
+        FROM
+            likes
+        WHERE
+            liker = $1
+        AND
+            liked = $2;
+        
+        IF liked_person IS NOT NULL
+        THEN
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+     END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION is_matched("me_id" int, "user_id" int) RETURNS boolean AS $$
+    DECLARE
+        liker_person record;
+    BEGIN
+    -- Check if he liked us
+        SELECT
+            *
+        INTO
+            liker_person
+        FROM
+            likes
+        WHERE
+            liker = $2
+        AND
+            liked = $1;
+
+    -- Check if match
+        IF liker_person IS NOT NULL AND is_liked(me_id, user_id) = TRUE
+        THEN
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION is_not_interested("me_id" int, "user_id" int) RETURNS boolean AS $$
+    DECLARE
+        not_interested_person record;
+    BEGIN
+        SELECT
+            *
+        INTO
+            not_interested_person
+        FROM
+            not_interested
+        WHERE
+            actor = $1
+        AND
+            target = $2;
+        IF not_interested_person IS NOT NULL
+        THEN
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;

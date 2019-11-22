@@ -100,6 +100,12 @@ CREATE TABLE "likes" (
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
+CREATE TABLE "not_interested" (
+  "actor" int NOT NULL,
+  "target" int NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+);
+
 CREATE TABLE "reports" (
   "reporter" int NOT NULL,
   "reported" int NOT NULL,

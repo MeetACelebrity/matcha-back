@@ -455,3 +455,50 @@ export async function userReport({
         return null;
     }
 }
+
+export async function userNotInterested({
+    db,
+    uuidIn,
+    uuidOut,
+}: UserLikeArgs): Promise<true | null> {
+    const query = `
+        WITH 
+            actor_id
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $1
+        ),
+            target_id
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $2
+        )
+        INSERT INTO
+            not_interested
+        (
+            actor,
+            target
+        )
+        VALUES
+        (
+            (SELECT id FROM actor_id),
+            (SELECT id FROM target_id)
+        )`;
+
+    try {
+        const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
