@@ -494,7 +494,14 @@ CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS in
             extended_profiles.user_id = $2;
 
     -- Check if user match (if its the case return age, else return 0)
-        IF me_info.gender IS NULL OR user_info.gender IS NULL OR user_info.sexual_orientation IS NULL OR user_info.AGE IS NULL THEN
+        IF me_info.gender IS NULL OR 
+            user_info.gender IS NULL OR 
+            user_info.sexual_orientation IS NULL OR 
+            user_info.AGE IS NULL OR
+            is_liked(me_id, user_id) = TRUE OR
+            is_matched(me_id, user_id) = TRUE OR
+            is_not_interested(me_id, user_id) = TRUE
+            THEN
             RETURN 0;
         END IF;
     
@@ -515,6 +522,7 @@ CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS in
                 RETURN user_info.AGE;
             END IF;
     END CASE;
+    RETURN 0;
     END;
 $$ LANGUAGE plpgsql;
 
@@ -737,11 +745,13 @@ CREATE OR REPLACE FUNCTION is_not_interested("me_id" int, "user_id" int) RETURNS
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
+            "size" bigint,
             "uuid" uuid, 
             "username" text,
             "givenNaqme" text, 
             "familyName" text,
+            "age" int,
             "distance" float,
             "commonTags" int,
             "score" int
@@ -758,28 +768,34 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid) RETURNS TABLE (
             users
         WHERE
             users.uuid = $1;
+
     -- Get proposals
         RETURN QUERY
         SELECT
+            count(*) OVER() as "size",
             users.uuid,
             users.username,
             users.given_name as "givenName",
             users.family_name as "familyName",
-            distance(1, users.id) as "distance",
-            common_tags(1, users.id) as "commonTags",
+            researched_sex(me_info.id, users.id) as "age",
+            distance(me_info.id, users.id) as "distance",
+            common_tags(me_info.id, users.id) as "commonTags",
             users.score
         FROM
             users
         WHERE
-            users.id != 1
+            users.id != me_info.id
         AND
             users.confirmed = TRUE
         AND
-            researched_sex(1, users.id) > 0
+            age IS NULL
         ORDER BY
-            distance,
-            "commonTags",
-            score;
-
+             distance,
+            "commonTags" DESC,
+            users.score DESC
+        LIMIT 
+            $2
+        OFFSET
+            $3;
     END;
 $$ LANGUAGE plpgsql;

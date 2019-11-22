@@ -8,10 +8,11 @@ export default function profileRoutes(): express.Router {
 
     const enum MatchStatusCoode {
         DONE = 'DONE',
+        ERROR = 'ERROR',
         INCOMPLETE_PROFILE = 'INCOMPLETE_PROFILE',
     }
 
-    router.get('/proposals', async (req, res) => {
+    router.get('/proposals/:limit/:offset', async (req, res) => {
         try {
             const { user }: Context = res.locals;
 
@@ -36,8 +37,17 @@ export default function profileRoutes(): express.Router {
             const result = await proposals({
                 db: res.locals.db,
                 uuid: user.uuid,
+                limit: Number(req.params.limit),
+                offset: Number(req.params.offset),
+                orderBy: req.body.orderBy,
+                order: req.body.order,
             });
-            res.json({ ok: 'ok' });
+            if (result === null) {
+                res.status(400);
+                res.json({ statusCode: MatchStatusCoode.ERROR });
+                return;
+            }
+            res.json({ result });
         } catch (e) {
             console.error(e);
         }
