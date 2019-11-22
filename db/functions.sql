@@ -429,12 +429,48 @@ CREATE OR REPLACE FUNCTION delete_tag("uuid" uuid, "tag" text) RETURNS text AS $
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURN int AS $$
+CREATE OR REPLACE FUNCTION inv_gender("gender" gender) RETURNS gender AS $$
+    BEGIN
+        IF $1 = 'MALE' THEN
+            RETURN 'FEMALE';
+        ELSE
+            RETURN 'MALE';
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS int AS $$
     DECLARE
-        me_info record;
-        user_info record;
+        me_info record;
+        user_info record;
+        is_block record;
+        research_orientation sexual_orientation;
+        research_gender gender;
     BEGIN
     
+    -- Ckeck if user block each other
+        SELECT 
+            *
+        INTO
+            is_block
+        FROM
+            blocks
+        WHERE (
+                blocker = $1
+            AND
+                blocked = $2
+        )
+        OR (
+                blocker = $2
+            AND
+                blocked = $1
+        );
+
+    IF is_block IS NOT NULL THEN
+        RETURN 0;
+    END IF;
+
+
     -- Get gender, sexual_orientation, age of logged user in 'me'
         SELECT
             gender,
@@ -460,10 +496,30 @@ CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RE
             extended_profiles.user_id = $2;
 
     -- Check if user match (if its the case return age, else return 0)
-        
-
+        IF me_info.gender IS NULL OR user_info.gender IS NULL OR user_info.sexual_orientation IS NULL OR user_info.AGE IS NULL THEN
+            RETURN 0;
+        END IF;
+    
+    CASE me_info.sexual_orientation
+        WHEN 'HETEROSEXUAL' THEN
+            IF user_info.gender = inv_gender(me_info.gender) AND (user_info.sexual_orientation = 'HETEROSEXUAL' OR user_info.sexual_orientation = 'BISEXUAL')
+            THEN
+                RETURN user_info.AGE;
+            END IF;
+        WHEN 'HOMOSEXUAL' THEN
+            IF user_info.gender = me_info.gender AND (user_info.sexual_orientation = 'HOMOSEXUAL' OR user_info.sexual_orientation = 'BISEXUAL')
+            THEN
+                RETURN user_info.AGE;
+            END IF;
+        WHEN 'BISEXUAL' THEN
+            IF (user_info.gender = inv_gender(me_info.gender) AND user_info.sexual_orientation = 'HETEROSEXUAL') OR (user_info.gender = me_info.gender AND user_info.sexual_orientation = 'HOMOSEXUAL') OR user_info.sexual_orientation = 'BISEXUAL'
+            THEN
+                RETURN user_info.AGE;
+            END IF;
+    END CASE;
     END;
-$$ LANGUAGE plpgsql
+$$ LANGUAGE plpgsql;
+
 
 
 CREATE OR REPLACE FUNCTION distance("me_id" int, "user_id" int) RETURNS float AS $$
