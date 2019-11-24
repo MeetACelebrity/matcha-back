@@ -695,24 +695,34 @@ CREATE OR REPLACE FUNCTION is_liked("me_id" int, "user_id" int) RETURNS boolean 
      END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION is_matched("me_id" int, "user_id" int) RETURNS boolean AS $$
+CREATE OR REPLACE FUNCTION is_liker("me_id" int, "user_id" int) RETURNS boolean AS $$
     DECLARE
-        liker_person record;
+        liked_person record;
     BEGIN
-    -- Check if he liked us
         SELECT
             *
         INTO
-            liker_person
+            liked_person
         FROM
             likes
         WHERE
             liker = $2
         AND
             liked = $1;
+        
+        IF liked_person IS NOT NULL
+        THEN
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+     END;
+$$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION is_matched("me_id" int, "user_id" int) RETURNS boolean AS $$
+    BEGIN
     -- Check if match
-        IF liker_person IS NOT NULL AND is_liked(me_id, user_id) = TRUE
+        IF is_liker(me_id, user_id) = TRUE AND is_liked(me_id, user_id) = TRUE
         THEN
             RETURN TRUE;
         ELSE
@@ -745,6 +755,46 @@ CREATE OR REPLACE FUNCTION is_not_interested("me_id" int, "user_id" int) RETURNS
     END;
 $$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION get_tags("user_id_tags" int) RETURNS TABLE ("tags_list" text[]) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT
+            ARRAY [
+                tags.uuid::text,
+                tags.name::text
+            ] as "tags_list"
+        FROM
+            tags
+        INNER JOIN
+            users_tags
+        ON
+            tags.id = users_tags.tag_id
+        WHERE
+            users_tags.user_id = user_id_tags;
+    END;
+$$ LANGUAGE plpgsql;  
+
+CREATE OR REPLACE FUNCTION get_images("user_id_images" int) RETURNS TABLE ("images_list" text[]) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT
+            ARRAY [
+                images.uuid::text,
+                images.src::text,
+                profile_pictures.image_nb::text
+            ] as "images_list"
+        FROM
+            profile_pictures
+        INNER JOIN
+            images
+        ON
+            profile_pictures.image_id = images.id
+        WHERE
+            profile_pictures.user_id = user_id_images;
+    END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid, 
@@ -754,7 +804,10 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
             "age" int,
             "distance" float,
             "commonTags" int,
-            "score" int
+            "score" int,
+            "isLikedMe" boolean,
+            "tags" text[],
+            "images" text[]
             ) AS $$
     DECLARE
         me_info record;
@@ -780,7 +833,20 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
             researched_sex(me_info.id, users.id) as "age",
             distance(me_info.id, users.id) as "distance",
             common_tags(me_info.id, users.id) as "commonTags",
-            users.score
+            users.score,
+            is_liker(me_info.id, users.id) as "isLikedMe",
+            ( 
+                SELECT 
+                    array_agg("tags_list"::text) as "tags"
+                FROM 
+                    get_tags(users.id)
+            ) as "tags",
+             ( 
+                SELECT 
+                    array_agg("images_list"::text) as "images"
+                FROM 
+                    get_images(users.id)
+            ) as "images"
         FROM
             users
         WHERE
