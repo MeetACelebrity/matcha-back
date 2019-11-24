@@ -229,6 +229,26 @@ CREATE OR REPLACE FUNCTION delete_picture(uuid1 uuid, uuid2 uuid) RETURNS text A
     END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_images("user_id_images" int) RETURNS TABLE ("images_list" text[]) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT
+            ARRAY [
+                images.uuid::text,
+                images.src::text,
+                profile_pictures.image_nb::text
+            ] as "images_list"
+        FROM
+            profile_pictures
+        INNER JOIN
+            images
+        ON
+            profile_pictures.image_id = images.id
+        WHERE
+            profile_pictures.user_id = user_id_images;
+    END;
+$$ LANGUAGE plpgsql;
+
 
 -- Tags
 CREATE OR REPLACE FUNCTION upsert_tag("uuid" uuid, "token" uuid, "tag" text) RETURNS text AS $$
@@ -341,6 +361,25 @@ CREATE OR REPLACE FUNCTION delete_tag("uuid" uuid, "tag" text) RETURNS text AS $
         RETURN 'DONE';
     END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_tags("user_id_tags" int) RETURNS TABLE ("tags_list" text[]) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT
+            ARRAY [
+                tags.uuid::text,
+                tags.name::text
+            ] as "tags_list"
+        FROM
+            tags
+        INNER JOIN
+            users_tags
+        ON
+            tags.id = users_tags.tag_id
+        WHERE
+            users_tags.user_id = user_id_tags;
+    END;
+$$ LANGUAGE plpgsql;  
 
 
 -- Addresses
@@ -670,7 +709,6 @@ CREATE OR REPLACE FUNCTION inv_gender("gender" gender) RETURNS gender AS $$
     END;
 $$ LANGUAGE plpgsql;
 
-
 CREATE OR REPLACE FUNCTION is_liked("me_id" int, "user_id" int) RETURNS boolean AS $$
     DECLARE
         liked_person record;
@@ -731,7 +769,6 @@ CREATE OR REPLACE FUNCTION is_matched("me_id" int, "user_id" int) RETURNS boolea
     END;
 $$ LANGUAGE plpgsql;
 
-
 CREATE OR REPLACE FUNCTION is_not_interested("me_id" int, "user_id" int) RETURNS boolean AS $$
     DECLARE
         not_interested_person record;
@@ -756,44 +793,6 @@ CREATE OR REPLACE FUNCTION is_not_interested("me_id" int, "user_id" int) RETURNS
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_tags("user_id_tags" int) RETURNS TABLE ("tags_list" text[]) AS $$
-    BEGIN
-        RETURN QUERY
-        SELECT
-            ARRAY [
-                tags.uuid::text,
-                tags.name::text
-            ] as "tags_list"
-        FROM
-            tags
-        INNER JOIN
-            users_tags
-        ON
-            tags.id = users_tags.tag_id
-        WHERE
-            users_tags.user_id = user_id_tags;
-    END;
-$$ LANGUAGE plpgsql;  
-
-CREATE OR REPLACE FUNCTION get_images("user_id_images" int) RETURNS TABLE ("images_list" text[]) AS $$
-    BEGIN
-        RETURN QUERY
-        SELECT
-            ARRAY [
-                images.uuid::text,
-                images.src::text,
-                profile_pictures.image_nb::text
-            ] as "images_list"
-        FROM
-            profile_pictures
-        INNER JOIN
-            images
-        ON
-            profile_pictures.image_id = images.id
-        WHERE
-            profile_pictures.user_id = user_id_images;
-    END;
-$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
             "size" bigint,
@@ -863,5 +862,28 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
             $2
         OFFSET
             $3;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
+            "size" bigint,
+            "uuid" uuid, 
+            "username" text,
+            "givenNaqme" text, 
+            "familyName" text,
+            "age" int,
+            "distance" float,
+            "commonTags" int,
+            "score" int,
+            "isLikedMe" boolean,
+            "tags" text[],
+            "images" text[]
+            ) AS $$
+    BEGIN
+        RETURN QUERY
+            SELECT
+                *
+            FROM
+                proposals($1, $2, $3); 
     END;
 $$ LANGUAGE plpgsql;
