@@ -178,17 +178,20 @@ export async function getLikerByUuid({
         OFFSET
             $3`;
     try {
-        const { rows: liker } = await db.query(query, [uuid, limit, offset]);
+        const { rows: likers } = await db.query(query, [uuid, limit, offset]);
 
-        const hasMore = liker[0].size - offset - limit > 0 ? true : false;
-        const data = liker.map(({ src, username, uuid, createdAt }) => ({
-            username,
-            uuid,
-            createdAt,
-            src: src === null ? null : srcToPath(src),
-        }));
+        const hasMore =
+            Array.isArray(likers) &&
+            likers[0] !== undefined &&
+            likers[0].size - offset - limit > 0;
 
-        return { data, hasMore };
+        return {
+            hasMore,
+            data: likers.map(({ src, ...fields }) => ({
+                ...fields,
+                src: src === null ? null : srcToPath(src),
+            })),
+        };
     } catch (e) {
         console.error(e);
         return null;
