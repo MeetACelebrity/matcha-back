@@ -53,7 +53,11 @@ export async function proposals({
         const { rows: users } = await db.query(query, [uuid, limit, offset]);
 
         // check result and well format output(get the size, remove it from data), the send it
-        const hasMore = users[0].size - offset - limit > 0 ? true : false;
+        const hasMore =
+            Array.isArray(users) &&
+            users[0] !== undefined &&
+            users[0].size - offset - limit > 0;
+
         const data = users.map(
             ({
                 uuid,
