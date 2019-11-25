@@ -799,9 +799,9 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
             "size" bigint,
-            "uuid" uuid, 
+            "uuid" uuid,
             "username" text,
-            "givenNaqme" text, 
+            "givenName" text,
             "familyName" text,
             "age" int,
             "distance" float,
@@ -870,9 +870,9 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
             "size" bigint,
-            "uuid" uuid, 
+            "uuid" uuid,
             "username" text,
-            "givenNaqme" text, 
+            "givenName" text,
             "familyName" text,
             "age" int,
             "distance" float,
