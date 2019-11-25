@@ -66,7 +66,7 @@ export interface UpdateExtendedUserArgs extends ModelArgs {
 }
 
 export interface UpdateProfilePicsArgs extends ModelArgs {
-    uuid1: string;
+    uuid: string;
     newPics: string;
 }
 
@@ -1033,17 +1033,20 @@ export async function updateRoaming({
 
 export async function updateProfilePics({
     db,
-    uuid1,
+    uuid: loggedUserUuid,
     newPics,
 }: UpdateProfilePicsArgs): Promise<string | null> {
-    const uuid2 = uuid();
-    const query = `SELECT upsert_profile_picture($1, $2, $3)`;
+    const query = `
+        SELECT
+            upsert_profile_picture($1, $2, $3)
+    `;
+
     try {
-        console.log('1 ', uuid1, '| 2 ', uuid2, ' | pic ', newPics);
         const {
             rows: [image],
-        } = await db.query(query, [uuid1, newPics, uuid2]);
-        return image.upsert_profile_picture;
+        } = await db.query(query, [loggedUserUuid, newPics, uuid()]);
+
+        return image.upsert_profile_picture || null;
     } catch (e) {
         console.error(e);
         return null;

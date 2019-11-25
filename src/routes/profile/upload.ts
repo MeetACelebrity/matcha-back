@@ -43,12 +43,14 @@ export default function setupUpload(router: express.Router) {
             const result = await updateProfilePics({
                 newPics,
                 db: res.locals.db,
-                uuid1: res.locals.user.uuid,
+                uuid: res.locals.user.uuid,
             });
+
             // if oldpics exist delete it from minio to
-            if (result !== 'DONE') {
+            if (result !== 'DONE' && result !== null) {
                 await cloud.removeObject('profile-pics', result);
             }
+
             res.json({
                 statusCode: UploadPicsStatusCode.DONE,
             });
