@@ -30,7 +30,7 @@ export interface CardUser {
     distance: number;
     commonTags: number;
     score: number;
-    isLikedMe: boolean;
+    hasLikedMe: boolean;
     tags: Tags[];
     images: Image[];
 }
@@ -68,7 +68,7 @@ export async function proposals({
                 distance,
                 commonTags,
                 score,
-                isLikedMe,
+                hasLikedMe,
                 tags,
                 images,
             }) => ({
@@ -80,7 +80,7 @@ export async function proposals({
                 distance,
                 commonTags,
                 score,
-                isLikedMe,
+                hasLikedMe,
                 tags:
                     tags !== null
                         ? tags.slice(1, -1).map((tag: string) => ({

@@ -807,7 +807,7 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
             "distance" float,
             "commonTags" int,
             "score" int,
-            "isLikedMe" boolean,
+            "hasLikedMe" boolean,
             "tags" text[],
             "images" text[]
             ) AS $$
@@ -836,7 +836,7 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
             distance(me_info.id, users.id) as "distance",
             common_tags(me_info.id, users.id) as "commonTags",
             users.score,
-            is_liker(me_info.id, users.id) as "isLikedMe",
+            is_liker(me_info.id, users.id) as "hasLikedMe",
             ( 
                 SELECT 
                     array_agg("tags_list"::text) as "tags"
@@ -878,7 +878,7 @@ CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "limit" int, "offset
             "distance" float,
             "commonTags" int,
             "score" int,
-            "isLikedMe" boolean,
+            "hasLikedMe" boolean,
             "tags" text[],
             "images" text[]
             ) AS $$
