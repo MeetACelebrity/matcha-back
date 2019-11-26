@@ -47,10 +47,16 @@ export async function proposals({
             SELECT
                 *
             FROM
-                proposals_format($1, $2, $3)
+                proposals_format($1, $2, $3, $4, $5)
             `;
 
-        const { rows: users } = await db.query(query, [uuid, limit, offset]);
+        const { rows: users } = await db.query(query, [
+            uuid,
+            limit,
+            offset,
+            orderBy,
+            order,
+        ]);
 
         // check result and well format output(get the size, remove it from data), the send it
         const hasMore =

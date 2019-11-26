@@ -868,11 +868,12 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text) RETURNS TABLE (
             "size" bigint,
-            "uuid" uuid,
+            "max_age" int,
+            "uuid" uuid, 
             "username" text,
-            "givenName" text,
+            "givenName" text, 
             "familyName" text,
             "age" int,
             "distance" float,
@@ -882,11 +883,37 @@ CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "limit" int, "offset
             "tags" text[],
             "images" text[]
             ) AS $$
+    DECLARE
+        query_order text;
     BEGIN
-        RETURN QUERY
-            SELECT
-                *
-            FROM
-                proposals($1, $2, $3); 
+        -- Prepare order query
+        IF me_order_by IS NOT NULL AND me_order IS NOT NULL 
+        THEN
+            query_order := 'ORDER BY "' || me_order_by || '" ' || me_order;
+        ELSE
+            query_order := '';
+        END IF;
+
+        RETURN QUERY 
+            EXECUTE format('
+                SELECT
+                    "size",
+                    42 as "max_age",
+                    "uuid", 
+                    "username",
+                    "givenName", 
+                    "familyName",
+                    "age",
+                    "distance",
+                    "commonTags",
+                    "score",
+                    "hasLikedMe",
+                    "tags",
+                    "images"
+                FROM
+                    proposals($1, $2, $3)
+                %s
+                ', query_order)
+            USING me_uuid, me_limit, me_offset;
     END;
 $$ LANGUAGE plpgsql;
