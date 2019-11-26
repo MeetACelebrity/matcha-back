@@ -19,6 +19,14 @@ export interface ProposalArgs extends ModelArgs {
     offset: number;
     orderBy: OrderBy;
     order: Order;
+    minAge: number;
+    maxAge: number | null;
+    minDistance: number;
+    maxDistance: number | null;
+    minScore: number;
+    maxScore: number | null;
+    minCommonTags: number;
+    maxCommonTags: number | null;
 }
 
 export interface CardUser {
@@ -41,14 +49,38 @@ export async function proposals({
     offset,
     orderBy,
     order,
+    minAge,
+    maxAge,
+    minDistance,
+    maxDistance,
+    minScore,
+    maxScore,
+    minCommonTags,
+    maxCommonTags,
 }: ProposalArgs): Promise<{ data: CardUser[]; hasMore: boolean } | null> {
     try {
         const query = `
             SELECT
                 *
             FROM
-                proposals_format($1, $2, $3, $4, $5)
+                proposals_format($1, $2, $3, $4, $5, ARRAY[$6, $7, $8, $9, $10, $11, $12, $13])
             `;
+
+        // checking number:
+        if (
+            isNaN(limit) ||
+            isNaN(offset) ||
+            isNaN(minAge) ||
+            isNaN(minDistance) ||
+            isNaN(minScore) ||
+            isNaN(minCommonTags) ||
+            (maxAge !== null && isNaN(maxAge)) ||
+            (maxDistance !== null && isNaN(maxDistance)) ||
+            (maxScore !== null && isNaN(maxScore)) ||
+            (maxCommonTags !== null && isNaN(maxCommonTags))
+        ) {
+            return null;
+        }
 
         const { rows: users } = await db.query(query, [
             uuid,
@@ -56,6 +88,14 @@ export async function proposals({
             offset,
             orderBy,
             order,
+            minAge,
+            maxAge,
+            minDistance,
+            maxDistance,
+            minScore,
+            maxScore,
+            minCommonTags,
+            maxCommonTags,
         ]);
 
         // check result and well format output(get the size, remove it from data), the send it

@@ -795,6 +795,27 @@ CREATE OR REPLACE FUNCTION is_not_interested("me_id" int, "user_id" int) RETURNS
     END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION prepare_filter_query("input" text, "min_value" int, "max_value" int) RETURNS text AS $$
+    DECLARE
+        filter_query text;
+    BEGIN
+        IF min_value IS NOT NULL
+        THEN
+            filter_query := '"' || input || '" >= ' || min_value || ' ';
+        END IF;
+
+        IF min_value IS NOT NULL AND max_value IS NOT NULL
+        THEN
+            filter_query := filter_query || ' AND ' || ' "' || input || '" <= ' || max_value || ' ';
+        ELSIF max_value IS NOT NULL
+        THEN
+            filter_query := '"' || input || '" <= ' || max_value || ' ';
+        END IF;
+
+        RETURN filter_query;
+    END;
+$$ LANGUAGE plpgsql;
+
 
 
 CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
@@ -868,9 +889,8 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8]) RETURNS TABLE (
             "size" bigint,
-            "max_age" int,
             "uuid" uuid, 
             "username" text,
             "givenName" text, 
@@ -884,21 +904,50 @@ CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_
             "images" text[]
             ) AS $$
     DECLARE
-        query_order text;
+        i int;
+        filter_array text ARRAY[4];
+        order_query text;
+        final_query text;
+        filter_query text;  
     BEGIN
         -- Prepare order query
         IF me_order_by IS NOT NULL AND me_order IS NOT NULL 
         THEN
-            query_order := 'ORDER BY "' || me_order_by || '" ' || me_order;
+            order_query := 'ORDER BY "' || me_order_by || '" ' || me_order;
         ELSE
-            query_order := '';
+            order_query := '';
         END IF;
 
+        i := 1;
+        filter_array := ARRAY['age', 'distance', 'score', 'commonTags'];
+        WHILE i < 5 LOOP
+
+            filter_query :=  prepare_filter_query(filter_array[i], filter_var[ i * 2 - 1], filter_var[ i * 2]);
+
+            IF filter_query IS NOT NULL AND final_query IS NOT NULL THEN
+                final_query := final_query || ' AND ' || filter_query; 
+            ELSIF filter_query IS NOT NULL THEN
+                final_query := filter_query;
+            END IF;
+
+            i := i + 1;
+        END LOOP;
+
+        IF final_query IS NOT NULL THEN
+            final_query := ' WHERE ' || final_query;
+        END IF;
+
+        IF order_query IS NOT NULL AND order_query != '' AND final_query IS NOT NULL THEN
+            final_query := final_query || ' ' || order_query ;
+        ELSIF order_query IS NOT NULL AND order_query != '' THEN
+            final_query := order_query;
+        END IF;
+
+        RAISE NOTICE 'final query : %', final_query;
         RETURN QUERY 
             EXECUTE format('
                 SELECT
                     "size",
-                    42 as "max_age",
                     "uuid", 
                     "username",
                     "givenName", 
@@ -913,7 +962,7 @@ CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_
                 FROM
                     proposals($1, $2, $3)
                 %s
-                ', query_order)
+                ', final_query)
             USING me_uuid, me_limit, me_offset;
     END;
 $$ LANGUAGE plpgsql;
