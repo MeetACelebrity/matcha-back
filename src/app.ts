@@ -1,18 +1,21 @@
-import { FRONT_ENDPOINT } from './constants';
 import express from 'express';
 import bodyParser from 'body-parser';
 import session from 'express-session';
 import cors from 'cors';
 import fileUpload from 'express-fileupload';
+import { createServer } from 'http';
 
+import { FRONT_ENDPOINT } from './constants';
 import routes from './routes';
 import { Database } from './database';
 import { Cloud } from './cloud';
 import { InternalUser, getUserByUuid } from './models/user';
+import { WS } from './ws';
 
 export interface Context {
     db: Database;
     cloud: Cloud;
+    ws: WS;
     user: InternalUser | null;
     isAuthenticated: boolean;
 }
@@ -23,9 +26,20 @@ interface User {
 
 async function app() {
     const server = express();
+    const httpServer = createServer(server);
 
     const db = new Database();
     const cloud = new Cloud();
+    const ws = new WS(httpServer);
+
+    ws.setup(
+        args => {
+            console.log(args);
+        },
+        args => {
+            console.log(args);
+        }
+    );
 
     server
         .use(
@@ -58,6 +72,7 @@ async function app() {
             const context: Context = {
                 db,
                 cloud,
+                ws,
                 user,
                 isAuthenticated: req.session!.user !== null,
             };
@@ -69,7 +84,7 @@ async function app() {
 
     routes(server);
 
-    server.listen(8080, '0.0.0.0', () => {
+    httpServer.listen(8080, '0.0.0.0', () => {
         console.log('Example app listening on port 8080!');
     });
 }

@@ -10,6 +10,7 @@
         "@types/got": "^9.6.9",
         "@types/pg": "^7.11.2",
         "@types/uuid": "^3.4.6",
+        "@types/websocket": "^1.0.0",
         "argon2": "^0.25.1",
         "body-parser": "^1.19.0",
         "cors": "^2.8.5",
@@ -23,7 +24,8 @@
         "minio": "^7.0.12",
         "nodemailer": "^6.3.1",
         "pg": "^7.14.0",
-        "uuid": "^3.3.3"
+        "uuid": "^3.3.3",
+        "websocket": "^1.0.30"
     },
     "devDependencies": {
         "@types/express": "^4.17.2",
@@ -43,8 +45,8 @@
         "typescript": "^3.7.2"
     },
     "scripts": {
-        "start": "node -r ts-node/register -r dotenv/config ./src/app.ts",
-        "watch": "nodemon --watch 'src/**/*.ts' --exec 'npm start'",
+        "start": "npm run watch",
+        "watch": "nodemon --watch src --exec 'ts-node -r dotenv/config' src/app.ts",
         "prebuild": "docker build . -t 'db'",
         "build": "tsc",
         "setup:database": "docker rm -f database ; docker run -d -p 35432:5432 --name database db",
