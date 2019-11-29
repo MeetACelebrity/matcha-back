@@ -700,6 +700,165 @@ CREATE OR REPLACE FUNCTION common_tags("me_id" int, "user_id" int) RETURNS int A
     END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
+            "size" bigint,
+            "uuid" uuid,
+            "username" text,
+            "givenName" text,
+            "familyName" text,
+            "age" int,
+            "distance" float,
+            "commonTags" int,
+            "score" int,
+            "hasLikedMe" boolean,
+            "tags" text[],
+            "images" text[]
+            ) AS $$
+    DECLARE
+        me_info record;
+    BEGIN
+    -- Get current users
+        SELECT
+            *
+        INTO
+            me_info
+        FROM
+            users
+        WHERE
+            users.uuid = $1;
+
+    -- Get proposals
+        RETURN QUERY
+        SELECT
+            count(*) OVER() as "size",
+            users.uuid,
+            users.username,
+            users.given_name as "givenName",
+            users.family_name as "familyName",
+            researched_sex(me_info.id, users.id) as "age",
+            distance(me_info.id, users.id) as "distance",
+            common_tags(me_info.id, users.id) as "commonTags",
+            users.score,
+            is_liker(me_info.id, users.id) as "hasLikedMe",
+            ( 
+                SELECT 
+                    array_agg("tags_list"::text) as "tags"
+                FROM 
+                    get_tags(users.id)
+            ) as "tags",
+             ( 
+                SELECT 
+                    array_agg("images_list"::text) as "images"
+                FROM 
+                    get_images(users.id)
+            ) as "images"
+        FROM
+            users
+        WHERE
+            users.id != me_info.id
+        AND
+            users.confirmed = TRUE
+        AND
+            age IS NULL
+        ORDER BY
+             distance,
+            "commonTags" DESC,
+            users.score DESC
+        LIMIT 
+            $2
+        OFFSET
+            $3;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+-- Search
+
+CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "limit" int, "offset" int) RETURNS TABLE (
+            "size" bigint,
+            "uuid" uuid,
+            "username" text,
+            "givenName" text,
+            "familyName" text,
+            "age" int,
+            "distance" float,
+            "commonTags" int,
+            "score" int,
+            "hasLikedMe" boolean,
+            "tags" text[],
+            "images" text[]
+            ) AS $$
+    DECLARE
+        me_info record;
+    BEGIN
+    -- Get current users
+        SELECT
+            *
+        INTO
+            me_info
+        FROM
+            users
+        WHERE
+            users.uuid = $1;
+
+    -- Get proposals
+        RETURN QUERY
+        SELECT
+            count(*) OVER() as "size",
+            users.uuid,
+            users.username,
+            users.given_name as "givenName",
+            users.family_name as "familyName", 
+            (
+                SELECT 
+                    EXTRACT(year FROM AGE(extended_profiles.birthday))
+                FROM
+                    extended_profiles
+                WHERE
+                   extended_profiles.user_id = users.id 
+            )::integer  as "age",
+            distance(me_info.id, users.id) as "distance",
+            common_tags(me_info.id, users.id) as "commonTags",
+            users.score,
+            is_liker(me_info.id, users.id) as "hasLikedMe",
+            ( 
+                SELECT 
+                    array_agg("tags_list"::text) as "tags"
+                FROM 
+                    get_tags(users.id)
+            ) as "tags",
+             ( 
+                SELECT 
+                    array_agg("images_list"::text) as "images"
+                FROM 
+                    get_images(users.id)
+            ) as "images"
+        FROM
+            users
+        WHERE
+            users.id != me_info.id
+        AND
+            users.confirmed = TRUE
+        AND
+        (
+                users.username LIKE me_data || '%'
+            OR
+                users.given_name LIKE me_data || '%'
+            OR
+                users.family_name LIKE me_data || '%'
+        )
+        ORDER BY
+             distance,
+            "commonTags" DESC,
+            users.score DESC
+        LIMIT 
+            $3
+        OFFSET
+            $4;
+    END;
+$$ LANGUAGE plpgsql;
+
+
 
 -- Utils 
 CREATE OR REPLACE FUNCTION inv_gender("gender" gender) RETURNS gender AS $$
@@ -818,78 +977,8 @@ $$ LANGUAGE plpgsql;
 
 
 
-CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
-            "size" bigint,
-            "uuid" uuid,
-            "username" text,
-            "givenName" text,
-            "familyName" text,
-            "age" int,
-            "distance" float,
-            "commonTags" int,
-            "score" int,
-            "hasLikedMe" boolean,
-            "tags" text[],
-            "images" text[]
-            ) AS $$
-    DECLARE
-        me_info record;
-    BEGIN
-    -- Get current users
-        SELECT
-            *
-        INTO
-            me_info
-        FROM
-            users
-        WHERE
-            users.uuid = $1;
-
-    -- Get proposals
-        RETURN QUERY
-        SELECT
-            count(*) OVER() as "size",
-            users.uuid,
-            users.username,
-            users.given_name as "givenName",
-            users.family_name as "familyName",
-            researched_sex(me_info.id, users.id) as "age",
-            distance(me_info.id, users.id) as "distance",
-            common_tags(me_info.id, users.id) as "commonTags",
-            users.score,
-            is_liker(me_info.id, users.id) as "hasLikedMe",
-            ( 
-                SELECT 
-                    array_agg("tags_list"::text) as "tags"
-                FROM 
-                    get_tags(users.id)
-            ) as "tags",
-             ( 
-                SELECT 
-                    array_agg("images_list"::text) as "images"
-                FROM 
-                    get_images(users.id)
-            ) as "images"
-        FROM
-            users
-        WHERE
-            users.id != me_info.id
-        AND
-            users.confirmed = TRUE
-        AND
-            age IS NULL
-        ORDER BY
-             distance,
-            "commonTags" DESC,
-            users.score DESC
-        LIMIT 
-            $2
-        OFFSET
-            $3;
-    END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8]) RETURNS TABLE (
+-- Format
+CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8], "kind" text, "me_data" text) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid, 
             "username" text,
@@ -943,7 +1032,12 @@ CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_
             final_query := order_query;
         END IF;
 
-        RAISE NOTICE 'final query : %', final_query;
+        IF kind = 'proposals' THEN
+            kind := 'proposals($1, $2, $3)';
+        ELSIF kind = 'search' AND me_data IS NOT NULL THEN
+            kind := 'search($1, $4, $2, $3)';
+        END IF;
+
         RETURN QUERY 
             EXECUTE format('
                 SELECT
@@ -960,9 +1054,9 @@ CREATE OR REPLACE FUNCTION proposals_format("me_uuid" uuid, "me_limit" int, "me_
                     "tags",
                     "images"
                 FROM
-                    proposals($1, $2, $3)
+                    %s
                 %s
-                ', final_query)
-            USING me_uuid, me_limit, me_offset;
+                ', kind, final_query)
+            USING me_uuid, me_limit, me_offset, me_data;
     END;
 $$ LANGUAGE plpgsql;
