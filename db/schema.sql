@@ -164,10 +164,6 @@ CREATE TABLE "users_tags" (
   "user_id" int NOT NULL
 );
 
-CREATE TABLE "matches" (
-  "a" int NOT NULL,
-  "b" int NOT NULL
-);
 
 ALTER TABLE "users" ADD FOREIGN KEY ("primary_address_id") REFERENCES "addresses" ("id");
 
@@ -186,6 +182,10 @@ ALTER TABLE "tokens" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "likes" ADD FOREIGN KEY ("liker") REFERENCES "users" ("id");
 
 ALTER TABLE "likes" ADD FOREIGN KEY ("liked") REFERENCES "users" ("id");
+
+ALTER TABLE "not_interested" ADD FOREIGN KEY ("actor") REFERENCES "users" ("id");
+
+ALTER TABLE "not_interested" ADD FOREIGN KEY ("target") REFERENCES "users" ("id");
 
 ALTER TABLE "reports" ADD FOREIGN KEY ("reporter") REFERENCES "users" ("id");
 
@@ -214,10 +214,6 @@ ALTER TABLE "notifications" ADD FOREIGN KEY ("notifier_user_id") REFERENCES "use
 ALTER TABLE "users_tags" ADD FOREIGN KEY ("tag_id") REFERENCES "tags" ("id");
 
 ALTER TABLE "users_tags" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-
-ALTER TABLE "matches" ADD FOREIGN KEY ("a") REFERENCES "users" ("id");
-
-ALTER TABLE "matches" ADD FOREIGN KEY ("b") REFERENCES "users" ("id");
 
 CREATE UNIQUE INDEX ON "users" ("uuid");
 
@@ -254,5 +250,3 @@ CREATE UNIQUE INDEX ON "tags" ("uuid");
 CREATE UNIQUE INDEX ON "tags" ("name");
 
 CREATE UNIQUE INDEX ON "users_tags" ("tag_id", "user_id");
-
-CREATE UNIQUE INDEX ON "matches" ("a", "b");

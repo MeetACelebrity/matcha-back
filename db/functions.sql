@@ -1058,5 +1058,5 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
                 %s
                 ', kind, final_query)
             USING me_uuid, me_limit, me_offset, me_data;
-    END;
 $$ LANGUAGE plpgsql;
+    END;
