@@ -9,6 +9,7 @@ import {
     updateExtendedUser,
     addTags,
     SexualOrientation,
+    updateProfilePics,
     Gender,
 } from '../src/models/user';
 
@@ -33,6 +34,8 @@ class User {
     private tag1: string;
     private tag2: string;
     private tag3: string;
+
+    private pics: string;
 
     constructor() {
         const tagsChoices = [
@@ -107,6 +110,8 @@ class User {
             tagsChoices[
                 faker.random.number({ min: 0, max: tagsChoices.length - 1 })
             ];
+
+        this.pics = `${faker.random.number({ min: 0, max: 7 })}.jpg`;
     }
 
     get userUuid() {
@@ -135,6 +140,9 @@ class User {
     }
     get userTag3() {
         return this.tag3;
+    }
+    get userPics() {
+        return this.pics;
     }
 
     toPGSQL() {
@@ -241,6 +249,12 @@ class User {
             await addTags({ db, uuid: user.userUuid, tag: user.userTag2 });
             await addTags({ db, uuid: user.userUuid, tag: user.userTag3 });
 
+            // insert profile pics
+            await updateProfilePics({
+                db,
+                uuid: user.userUuid,
+                newPics: user.userPics,
+            });
             console.log('user n ', index, ' has been created !');
         }
         await db.query('COMMIT');
