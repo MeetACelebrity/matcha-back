@@ -23,8 +23,7 @@ class User {
     private location: boolean;
     private roamming: string;
 
-    private addressLat: number;
-    private addressLong: number;
+    private address: { lat: string; lon: string };
 
     private birthday: Date;
     private gender: Gender;
@@ -66,25 +65,30 @@ class User {
         this.roamming = roamingChoices[faker.random.number({ min: 0, max: 2 })];
 
         // generate addresses
-        this.addressLat = faker.random.number({
-            min: 45,
-            max: 50,
-            precision: 0.001,
-        });
-        this.addressLong = faker.random.number({
-            min: 1.1,
-            max: 4,
-            precision: 0.001,
-        });
-
-        // generate extended profiled
-        this.birthday = new Date(
-            Date.UTC(
-                faker.random.number({ min: 1900, max: 2001 }),
-                faker.random.number({ min: 1, max: 12 }),
-                faker.random.number({ min: 1, max: 20 })
-            )
-        );
+        (this.address = faker.random.arrayElement([
+            { lat: '48.9167', lon: '2.2833' }, // Asnieres
+            { lat: '48.8534', lon: '2.3488' }, // Paris 1er
+            { lat: '48.8835 ', lon: '2.3219' }, // Paris 17e
+            { lat: '45.750000', lon: '4.850000' }, // Lyon 7e
+            { lat: '43.2899782', lon: '5.3759657' }, // Marseille 6e
+            { lat: '50.6333 ', lon: '3.0667' }, // Lille
+            { lat: '48.3 ', lon: '4.0833' }, // Troyes
+            { lat: '49.4431 ', lon: '1.0993' }, // Rouen
+            { lat: '45.7676  ', lon: '4.8345' }, // Lyon 1er
+            { lat: '43.2167 ', lon: '5.35' }, // Marseille 8eme
+            { lat: '47.9033 ', lon: '3.60167' }, // Seignelay
+            { lat: '45.55 ', lon: '3.75' }, // Ambert
+            { lat: '43.1167', lon: '5.9333' }, // Toulon
+            { lat: '43.94834', lon: '4.80892' }, // Avignon
+        ])),
+            // generate extended profiled
+            (this.birthday = new Date(
+                Date.UTC(
+                    faker.random.number({ min: 1900, max: 2001 }),
+                    faker.random.number({ min: 1, max: 12 }),
+                    faker.random.number({ min: 1, max: 20 })
+                )
+            ));
         this.gender = genderChoices[faker.random.number({ min: 0, max: 1 })];
         this.sexualOrientation =
             sexualOrientationChoices[faker.random.number({ min: 0, max: 2 })];
@@ -108,11 +112,8 @@ class User {
     get userUuid() {
         return this.uuid;
     }
-    get userAddressLat() {
-        return this.addressLat;
-    }
-    get userAddressLong() {
-        return this.addressLong;
+    get userAddress() {
+        return this.address;
     }
     get userBirthday() {
         return this.birthday;
@@ -197,8 +198,8 @@ class User {
                 db,
                 uuid: user.userUuid,
                 isPrimary: true,
-                lat: user.userAddressLat,
-                long: user.userAddressLong,
+                lat: Number(user.userAddress.lat),
+                long: Number(user.userAddress.lon),
                 name: '',
                 administrative: '',
                 county: '',
@@ -210,8 +211,8 @@ class User {
                 db,
                 uuid: user.userUuid,
                 isPrimary: false,
-                lat: user.userAddressLat,
-                long: user.userAddressLong,
+                lat: Number(user.userAddress.lat),
+                long: Number(user.userAddress.lon),
                 name: '',
                 administrative: '',
                 county: '',
