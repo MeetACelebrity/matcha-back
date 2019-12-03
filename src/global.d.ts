@@ -13,3 +13,5 @@ declare module 'heml' {
 
     export = heml;
 }
+
+declare module 'memorystore';

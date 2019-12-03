@@ -4,6 +4,7 @@ import session from 'express-session';
 import cors from 'cors';
 import fileUpload from 'express-fileupload';
 import { createServer } from 'http';
+import createMemoryStore from 'memorystore';
 
 import { FRONT_ENDPOINT } from './constants';
 import routes from './routes';
@@ -30,7 +31,12 @@ async function app() {
 
     const db = new Database();
     const cloud = new Cloud();
-    const ws = new WS(httpServer);
+
+    const store = new (createMemoryStore(session))({
+        checkPeriod: 86400000, // prune expired entries every 24h
+    });
+
+    const ws = new WS(httpServer, store);
 
     ws.setup(
         args => {
@@ -52,6 +58,7 @@ async function app() {
         .use(bodyParser.json())
         .use(
             session({
+                store,
                 secret: 'test',
                 resave: false,
                 cookie: {
