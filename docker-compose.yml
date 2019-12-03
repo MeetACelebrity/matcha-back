@@ -16,6 +16,8 @@ services:
 
     setupCloud:
         image: minio/mc
+        volumes:
+            - ./seed/images:/tmp
         depends_on:
             - cloud
         entrypoint: >
@@ -29,6 +31,13 @@ services:
                 sleep 4;
                 /usr/bin/mc config host add cloud http://${CLOUD_HOST}:${CLOUD_PORT} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
                 /usr/bin/mc mb cloud/profile-pics;
-                /usr/bin/mc policy set public cloud/profile-pics 
+                /usr/bin/mc policy set public cloud/profile-pics;
+                /usr/bin/mc cp /tmp/1.jpg cloud/profile-pics;
+                /usr/bin/mc cp /tmp/2.jpg cloud/profile-pics;
+                /usr/bin/mc cp /tmp/3.jpg cloud/profile-pics;
+                /usr/bin/mc cp /tmp/4.jpg cloud/profile-pics;
+                /usr/bin/mc cp /tmp/5.jpg cloud/profile-pics;
+                /usr/bin/mc cp /tmp/6.jpg cloud/profile-pics;
+                /usr/bin/mc cp /tmp/7.jpg cloud/profile-pics;
                 exit 0;
             '
