@@ -50,10 +50,6 @@ export class WS extends server {
                     return;
                 }
 
-                // console.log('request =', request);
-
-                console.log('request', request);
-
                 const sid = request.cookies.find(
                     ({ name }) => name === 'connect.sid'
                 );

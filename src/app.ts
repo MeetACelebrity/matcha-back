@@ -39,11 +39,11 @@ async function app() {
     const ws = new WS(httpServer, store);
 
     ws.setup(
-        args => {
-            console.log(args);
+        ({ body }) => {
+            console.log(body);
         },
-        args => {
-            console.log(args);
+        () => {
+            console.log('bye');
         }
     );
 
