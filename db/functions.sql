@@ -812,9 +812,36 @@ CREATE OR REPLACE FUNCTION is_arround("lat" float, "long" float, "user_id" int) 
     END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION has_same_tags("tags_array" text ARRAY[5], "user_id" int) RETURNS boolean AS $$
+    DECLARE
+        user_array text ARRAY[5];
+    BEGIN
+    -- GET AN ARRAY of tsvector tags of users
+        user_array := ARRAY(
+            SELECT
+                strip(tsvector)
+            FROM
+                tags
+            INNER JOIN
+                users_tags
+            ON
+                users_tags.tag_id = tags.id
+            WHERE
+                users_tags.user_id = $2
+        );
+    -- GET TSVECTOR if input array
+        FOR I IN array_lower(tags_array, 1)..array_upper(tags_array, 1) LOOP
+            tags_array[i] := strip(tsvector(tags_array[i]));
+        END LOOP;
+RAISE NOTICE 'user_array: %',  user_array;   
+RAISE NOTICE 'tags_array: %',  tags_array;                       
+    -- is user array @> input array?
+        RETURN user_array @> tags_array;
+    END;
+$$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int, "me_offset" int, "lat" float, "long" float) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int, "me_offset" int, "lat" float, "long" float, "tags_array" text ARRAY[5]) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid,
             "username" text,
@@ -831,6 +858,7 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
     DECLARE
         me_info record;
         location_query text;
+        tags_query text;
     BEGIN
     -- Get current users
         SELECT
@@ -849,6 +877,12 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
         location_query := '';
     END IF;
 
+    -- Generate tags query
+        IF tags_array IS NOT NULL THEN
+            tags_query := 'AND has_same_tags($7, users.id) = TRUE';
+        ELSE
+            tags_query := '';
+        END IF;
 
     -- Get proposals
         RETURN QUERY
@@ -898,6 +932,7 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
                 users.family_name LIKE $1 || %L
         )
         %s
+        %s
         ORDER BY
             distance,
             "commonTags" DESC,
@@ -905,8 +940,8 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
         LIMIT 
             $2
         OFFSET
-            $3', '%', '%', '%', location_query)
-        USING me_data, me_limit, me_offset, me_info.id, lat, long;
+            $3', '%', '%', '%', location_query, tags_query)
+        USING me_data, me_limit, me_offset, me_info.id, lat, long, tags_array;
     END;
 $$ LANGUAGE plpgsql;
 
@@ -1030,7 +1065,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Format
-CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8], "kind" text, "me_data" text, "lat" float, "long" float) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8], "kind" text, "me_data" text, "lat" float, "long" float, "tags_array" text ARRAY[5]) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid, 
             "username" text,
@@ -1089,7 +1124,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
         IF kind = 'proposals' THEN
             kind := 'proposals($1, $2, $3)';
         ELSIF kind = 'search' AND me_data IS NOT NULL THEN
-            kind := 'search($1, $4, $2, $3, $5, $6)';
+            kind := 'search($1, $4, $2, $3, $5, $6, $7)';
         END IF;
 
         RETURN QUERY 
@@ -1111,7 +1146,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
                     %s
                 %s
                 ', kind, final_query)
-            USING me_uuid, me_limit, me_offset, me_data, lat, long;
+            USING me_uuid, me_limit, me_offset, me_data, lat, long, tags_array;
              END;
 $$ LANGUAGE plpgsql;
    

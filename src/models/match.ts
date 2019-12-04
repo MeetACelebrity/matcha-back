@@ -33,6 +33,7 @@ export interface SearchArgs extends ProposalArgs {
     data: string;
     lat: number | null;
     long: number | null;
+    tagsArray: string;
 }
 
 export interface CardUser {
@@ -69,7 +70,7 @@ export async function proposals({
             SELECT
                 *
             FROM
-                formated($1, $2, $3, $4, $5, ARRAY[$6, $7, $8, $9, $10, $11, $12, $13]::integer[], $14, $15)
+                formated($1, $2, $3, $4, $5, ARRAY[$6, $7, $8, $9, $10, $11, $12, $13]::integer[], $14, NULL, NULL, NULL, NULL)
             `;
 
         // checking number:
@@ -103,7 +104,6 @@ export async function proposals({
             minCommonTags,
             maxCommonTags,
             'proposals',
-            null,
         ]);
 
         // check result and well format output(get the size, remove it from data), the send it
@@ -167,6 +167,7 @@ export async function search({
     offset,
     lat,
     long,
+    tagsArray,
     orderBy,
     order,
     minAge,
@@ -183,7 +184,7 @@ export async function search({
             SELECT
                 *
             FROM
-                formated($1, $2, $3, $4, $5, ARRAY[$6, $7, $8, $9, $10, $11, $12, $13]::integer[], $14, $15, $16, $17)
+                formated($1, $2, $3, $4, $5, ARRAY[$6, $7, $8, $9, $10, $11, $12, $13]::integer[], $14, $15, $16, $17, $18)
             `;
 
         // checking number:
@@ -220,6 +221,7 @@ export async function search({
             data,
             lat,
             long,
+            tagsArray,
         ]);
 
         // check result and well format output(get the size, remove it from data), the send it

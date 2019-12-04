@@ -112,6 +112,7 @@ export default function profileRoutes(): express.Router {
                 body: {
                     lat,
                     long,
+                    tagsArray,
                     orderBy,
                     order,
                     minAge,
@@ -170,6 +171,7 @@ export default function profileRoutes(): express.Router {
                     offset: Number(offset),
                     lat: lat === undefined ? null : Number(lat),
                     long: long === undefined ? null : Number(long),
+                    tagsArray: tagsArray === undefined ? null : tagsArray,
                     orderBy: orderBy === undefined ? null : orderBy,
                     order: order === undefined ? 'ASC' : order,
                     minAge: minAge === undefined ? 0 : Number(minAge),
