@@ -31,6 +31,8 @@ export interface ProposalArgs extends ModelArgs {
 
 export interface SearchArgs extends ProposalArgs {
     data: string;
+    lat: number | null;
+    long: number | null;
 }
 
 export interface CardUser {
@@ -163,6 +165,8 @@ export async function search({
     data,
     limit,
     offset,
+    lat,
+    long,
     orderBy,
     order,
     minAge,
@@ -179,7 +183,7 @@ export async function search({
             SELECT
                 *
             FROM
-                formated($1, $2, $3, $4, $5, ARRAY[$6, $7, $8, $9, $10, $11, $12, $13]::integer[], $14, $15)
+                formated($1, $2, $3, $4, $5, ARRAY[$6, $7, $8, $9, $10, $11, $12, $13]::integer[], $14, $15, $16, $17)
             `;
 
         // checking number:
@@ -214,6 +218,8 @@ export async function search({
             maxCommonTags,
             'search',
             data,
+            lat,
+            long,
         ]);
 
         // check result and well format output(get the size, remove it from data), the send it

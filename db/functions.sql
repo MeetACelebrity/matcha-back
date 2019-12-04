@@ -773,8 +773,48 @@ $$ LANGUAGE plpgsql;
 
 
 -- Search
+CREATE OR REPLACE FUNCTION is_arround("lat" float, "long" float, "user_id" int) RETURNS boolean AS $$
+    DECLARE
+        user_info record;
+    BEGIN
 
-CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "limit" int, "offset" int) RETURNS TABLE (
+    -- Get position of user
+        SELECT
+            addresses.point
+        INTO
+            user_info
+        FROM
+            addresses
+        WHERE
+            id = (
+                SELECT
+                    (
+                        CASE WHEN 
+                            (current_address_id IS NULL)
+                        THEN
+                            primary_address_id
+                        ELSE
+                            current_address_id
+                        END
+                    )
+                FROM
+                    users
+                WHERE
+                    id = $3
+            );     
+    
+    -- Retun Distance
+        IF ( SELECT point($2, $1) <@> point(user_info.point[1], user_info.point[0])) < 7 THEN
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int, "me_offset" int, "lat" float, "long" float) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid,
             "username" text,
@@ -790,6 +830,7 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "limit" int, "
             ) AS $$
     DECLARE
         me_info record;
+        location_query text;
     BEGIN
     -- Get current users
         SELECT
@@ -801,8 +842,17 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "limit" int, "
         WHERE
             users.uuid = $1;
 
+    -- Generate location query
+    IF lat IS NOT NULL AND long IS NOT NULL THEN
+        location_query := 'AND is_arround($5, $6, users.id) = TRUE';
+    ELSE
+        location_query := '';
+    END IF;
+
+
     -- Get proposals
         RETURN QUERY
+        EXECUTE format('
         SELECT
             count(*) OVER() as "size",
             users.uuid,
@@ -817,10 +867,10 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "limit" int, "
                 WHERE
                    extended_profiles.user_id = users.id 
             )::integer  as "age",
-            distance(me_info.id, users.id) as "distance",
-            common_tags(me_info.id, users.id) as "commonTags",
+            distance($4, users.id) as "distance",
+            common_tags($4, users.id) as "commonTags",
             users.score,
-            is_liker(me_info.id, users.id) as "hasLikedMe",
+            is_liker($4, users.id) as "hasLikedMe",
             ( 
                 SELECT 
                     array_agg("tags_list"::text) as "tags"
@@ -836,25 +886,27 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "limit" int, "
         FROM
             users
         WHERE
-            users.id != me_info.id
+            users.id != $4
         AND
             users.confirmed = TRUE
         AND
         (
-                users.username LIKE me_data || '%'
+                users.username LIKE $1 || %L
             OR
-                users.given_name LIKE me_data || '%'
+                users.given_name LIKE $1 || %L
             OR
-                users.family_name LIKE me_data || '%'
+                users.family_name LIKE $1 || %L
         )
+        %s
         ORDER BY
-             distance,
+            distance,
             "commonTags" DESC,
             users.score DESC
         LIMIT 
-            $3
+            $2
         OFFSET
-            $4;
+            $3', '%', '%', '%', location_query)
+        USING me_data, me_limit, me_offset, me_info.id, lat, long;
     END;
 $$ LANGUAGE plpgsql;
 
@@ -978,7 +1030,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Format
-CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8], "kind" text, "me_data" text) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8], "kind" text, "me_data" text, "lat" float, "long" float) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid, 
             "username" text,
@@ -1007,6 +1059,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
             order_query := '';
         END IF;
 
+        -- Prepare filter query
         i := 1;
         filter_array := ARRAY['age', 'distance', 'score', 'commonTags'];
         WHILE i < 5 LOOP
@@ -1025,6 +1078,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
         IF final_query IS NOT NULL THEN
             final_query := ' WHERE ' || final_query;
         END IF;
+    
 
         IF order_query IS NOT NULL AND order_query != '' AND final_query IS NOT NULL THEN
             final_query := final_query || ' ' || order_query ;
@@ -1035,7 +1089,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
         IF kind = 'proposals' THEN
             kind := 'proposals($1, $2, $3)';
         ELSIF kind = 'search' AND me_data IS NOT NULL THEN
-            kind := 'search($1, $4, $2, $3)';
+            kind := 'search($1, $4, $2, $3, $5, $6)';
         END IF;
 
         RETURN QUERY 
@@ -1057,7 +1111,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
                     %s
                 %s
                 ', kind, final_query)
-            USING me_uuid, me_limit, me_offset, me_data;
+            USING me_uuid, me_limit, me_offset, me_data, lat, long;
              END;
 $$ LANGUAGE plpgsql;
    

@@ -69,20 +69,20 @@ class User {
 
         // generate addresses
         (this.address = faker.random.arrayElement([
-            { lat: '48.9167', lon: '2.2833' }, // Asnieres
-            { lat: '48.8534', lon: '2.3488' }, // Paris 1er
-            { lat: '48.8835 ', lon: '2.3219' }, // Paris 17e
-            { lat: '45.750000', lon: '4.850000' }, // Lyon 7e
-            { lat: '43.2899782', lon: '5.3759657' }, // Marseille 6e
-            { lat: '50.6333 ', lon: '3.0667' }, // Lille
-            { lat: '48.3 ', lon: '4.0833' }, // Troyes
+            { lat: '43.1167', lon: '5.9333' }, // Toulon
             { lat: '49.4431 ', lon: '1.0993' }, // Rouen
             { lat: '45.7676  ', lon: '4.8345' }, // Lyon 1er
+            { lat: '48.3 ', lon: '4.0833' }, // Troyes
+            { lat: '50.6333 ', lon: '3.0667' }, // Lille
+            { lat: '48.8835 ', lon: '2.3219' }, // Paris 17e
+            { lat: '48.9167', lon: '2.2833' }, // Asnieres
+            { lat: '45.55 ', lon: '3.75' }, // Ambert
+            { lat: '48.8534', lon: '2.3488' }, // Paris 1er
+            { lat: '43.2899782', lon: '5.3759657' }, // Marseille 6e
+            { lat: '43.94834', lon: '4.80892' }, // Avignon
+            { lat: '45.750000', lon: '4.850000' }, // Lyon 7e
             { lat: '43.2167 ', lon: '5.35' }, // Marseille 8eme
             { lat: '47.9033 ', lon: '3.60167' }, // Seignelay
-            { lat: '45.55 ', lon: '3.75' }, // Ambert
-            { lat: '43.1167', lon: '5.9333' }, // Toulon
-            { lat: '43.94834', lon: '4.80892' }, // Avignon
         ])),
             // generate extended profiled
             (this.birthday = new Date(

@@ -110,6 +110,8 @@ export default function profileRoutes(): express.Router {
         async (
             {
                 body: {
+                    lat,
+                    long,
                     orderBy,
                     order,
                     minAge,
@@ -166,6 +168,8 @@ export default function profileRoutes(): express.Router {
                     uuid: user.uuid,
                     limit: Number(limit),
                     offset: Number(offset),
+                    lat: lat === undefined ? null : Number(lat),
+                    long: long === undefined ? null : Number(long),
                     orderBy: orderBy === undefined ? null : orderBy,
                     order: order === undefined ? 'ASC' : order,
                     minAge: minAge === undefined ? 0 : Number(minAge),
