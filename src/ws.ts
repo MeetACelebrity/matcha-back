@@ -1,8 +1,23 @@
 import { server, request, IMessage, connection, IStringified } from 'websocket';
 import { Server } from 'http';
 
+import { Validator } from './utils/validator';
+
+interface OpenConnexion {
+    connection: connection;
+    createdAt: Date;
+}
+
+export enum MessageType {
+    INIT = 'INIT',
+}
+
+export interface Message {
+    type: MessageType;
+}
+
 export interface OnMessageCallbackArgs {
-    body: any;
+    body: Message;
     request: request;
     connection: connection;
 }
@@ -14,13 +29,12 @@ export interface OnCloseCallbackArgs {
     connection: connection;
 }
 
-interface OpenConnexion {
-    connection: connection;
-    createdAt: Date;
-}
-
 type OnMessageCallback = (args: OnMessageCallbackArgs) => Promise<void> | void;
 type OnCloseCallback = (args: OnCloseCallbackArgs) => Promise<void> | void;
+
+const schema = Validator.object().keys({
+    type: Validator.string().whitelist(Object.values(MessageType)),
+});
 
 export class WS extends server {
     private static ALLOWED_ORIGINS = ['http://localhost:3000'];
@@ -104,6 +118,19 @@ export class WS extends server {
                         }
 
                         const body = JSON.parse(message.utf8Data);
+
+                        const validationResult = Validator.validate(
+                            schema,
+                            body
+                        );
+                        if (validationResult !== true) {
+                            console.error(
+                                'Invalid message',
+                                validationResult,
+                                body
+                            );
+                            return;
+                        }
 
                         await onMessage({
                             body,

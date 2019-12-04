@@ -39,8 +39,67 @@ async function app() {
     const ws = new WS(httpServer, store);
 
     ws.setup(
-        ({ body }) => {
+        ({ connection, body }) => {
             console.log(body);
+
+            switch (body.type) {
+                case 'INIT':
+                    connection.send(
+                        JSON.stringify({
+                            type: 'CONVERSATIONS',
+                            payload: {
+                                conversations: [
+                                    {
+                                        uuid: '123aze',
+                                        title: 'Baptiste Devessier',
+                                        description: 'Je suis un zboub',
+                                        picture:
+                                            'https://trello-attachments.s3.amazonaws.com/5dcbd72c39989f2478c2646d/300x166/e7586ac2b0e95ab0dd217ca9895217a4/Capture_d%E2%80%99e%CC%81cran_2019-11-20_a%CC%80_00.30.13.png',
+                                        messages: [1, 2, 3, 4, 5, 6],
+                                    },
+                                    {
+                                        uuid: '123azex',
+                                        title: 'Antoine Duléry',
+                                        description: 'Je suis un petit zboub',
+                                        picture:
+                                            'https://trello-attachments.s3.amazonaws.com/5dcbd72c39989f2478c2646d/300x166/e7586ac2b0e95ab0dd217ca9895217a4/Capture_d%E2%80%99e%CC%81cran_2019-11-20_a%CC%80_00.30.13.png',
+                                        messages: [
+                                            1,
+                                            2,
+                                            4,
+                                            5,
+                                            6,
+                                            1,
+                                            3,
+                                            5,
+                                            6,
+                                            7,
+                                            6,
+                                            3,
+                                            5,
+                                            3,
+                                        ],
+                                    },
+                                ],
+                            },
+                        })
+                    );
+
+                    setTimeout(() => {
+                        connection.send(
+                            JSON.stringify({
+                                type: 'NEW_MESSAGE',
+                                payload: {
+                                    conversationId: '123aze',
+                                    uuid: 'test_new_message',
+                                },
+                            })
+                        );
+                    }, 10000);
+                    break;
+                default:
+                    return;
+            }
         },
         () => {
             console.log('bye');
