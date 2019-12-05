@@ -1,6 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS cube;
 CREATE EXTENSION IF NOT EXISTS earthdistance;
 
+
 -- Pictures 
 CREATE OR REPLACE FUNCTION upsert_profile_picture(uuid1 uuid, new_pics text, uuid2 uuid) RETURNS text AS $$
     DECLARE
@@ -253,6 +254,7 @@ CREATE OR REPLACE FUNCTION get_images("user_id_images" int) RETURNS TABLE ("imag
 $$ LANGUAGE plpgsql;
 
 
+
 -- Tags
 CREATE OR REPLACE FUNCTION upsert_tag("uuid" uuid, "token" uuid, "tag" text) RETURNS text AS $$
     DECLARE
@@ -385,6 +387,7 @@ CREATE OR REPLACE FUNCTION get_tags("user_id_tags" int) RETURNS TABLE ("tags_lis
 $$ LANGUAGE plpgsql;  
 
 
+
 -- Addresses
 CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "lat"  double precision, "long"  double precision, "name" text, "administrative" text, "county" text, "country" text, "city" text) RETURNS text AS $$
     DECLARE
@@ -476,6 +479,229 @@ CREATE OR REPLACE FUNCTION upsert_addresses("uuid" uuid, "is_primary" boolean, "
     END;
 $$ LANGUAGE plpgsql;
 
+
+
+-- Chat
+CREATE OR REPLACE FUNCTION create_conv("uuid1" uuid, "uuid2" uuid, "conv" uuid) RETURNS boolean AS $$
+    DECLARE
+        user1 record;
+        user2 record;
+        conv record;
+    BEGIN
+    -- Get id of user 1
+        SELECT
+            id
+        INTO
+            user1
+        FROM
+            users
+        WHERE
+            uuid = $1;
+
+    -- Get id of user 2
+        SELECT
+            id
+        INTO
+            user2
+        FROM
+            users
+        WHERE
+            uuid = $2;
+
+        IF user1.id IS NULL OR user2.id IS NULL THEN
+            RETURN FALSE;
+        END IF;
+    -- Create conversation
+        INSERT INTO
+            conversations
+        ( uuid )
+        VALUES
+            ( $3 )
+        RETURNING
+            id
+        INTO
+            conv;
+    
+        IF conv.id IS NULL THEN
+            RETURN FALSE;
+        END IF;
+
+    -- Register user1 to conv
+        INSERT INTO
+            conversations_users ( 
+                user_id, 
+                conversation_id
+            )
+            VALUES (
+                user1.id,
+                conv.id
+            );
+     -- Register user2 to conv
+        INSERT INTO
+            conversations_users ( 
+                user_id, 
+                conversation_id
+            )
+            VALUES (
+                user2.id,
+                conv.id
+            );
+    RETURN TRUE;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION delete_conv("conv_uuid" uuid) RETURNS boolean AS $$
+    DECLARE
+        conv record;
+        del record;
+    BEGIN
+    -- Get id of conv
+        SELECT
+            id
+        INTO
+            conv
+        FROM
+            conversations
+        WHERE
+            uuid = $1;
+
+    -- Delete all registered
+        DELETE FROM
+            conversations_users
+        WHERE
+            conversation_id = conv.id;
+
+    -- Delete the conv
+        DELETE FROM
+            conversations
+        WHERE
+            id = conv.id
+        RETURNING
+            id
+        INTO 
+            del;
+
+        IF del.id IS NOT NULL THEN
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION create_message("conv_uuid" uuid, "author_uuid" uuid, "payload" text, "message_uuid" uuid) RETURNS boolean AS $$
+    DECLARE
+        conv record;
+        user_id record;
+        checker record;
+    BEGIN
+    -- Get id of conv
+        SELECT
+            id
+        INTO
+            conv
+        FROM
+            conversations
+        WHERE
+            uuid = $1;
+        
+        IF conv.id IS NULL THEN
+            RETURN FALSE;
+        END IF;
+
+    -- Get id of user
+        SELECT
+            id
+        INTO
+            user_id
+        FROM
+            users
+        WHERE
+            uuid = $2;
+            
+        IF user_id.id IS NULL THEN
+            RETURN FALSE;
+        END IF;
+
+    -- Check that author is part of the conversation
+        SELECT
+            conversation_id
+        INTO
+            checker
+        FROM
+            conversations_users
+        WHERE
+            conversations_users.user_id = user_id.id
+        AND
+            conversations_users.conversation_id = conv.id;
+        
+        IF checker.conversation_id IS NULL THEN
+            RETURN FALSE;
+        END IF;
+
+    -- Create message
+        INSERT INTO
+            messages( 
+                uuid,
+                author_id,
+                conversation_id,
+                payload
+            )
+            VALUES (
+                $4,
+                user_id.id,
+                conv.id,
+                $3
+            );
+        RETURN TRUE;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION delete_message("message_uuid" uuid, "author_uuid" uuid) RETURNS boolean AS $$
+    DECLARE
+        user_id record;
+        message_id record;
+        del record;
+    BEGIN
+    -- Get id of author
+        SELECT
+            id
+        INTO
+            user_id
+        FROM
+            users
+        WHERE
+            uuid = $2;
+
+    -- Get id of Message
+        SELECT
+            id
+        INTO
+            message_id
+        FROM
+            messages
+        WHERE
+            uuid = $1;
+
+    -- Delete message where author is good
+        DELETE FROM 
+            messages
+        WHERE
+            id = message_id.id
+        AND
+            author_id = user_id.id
+        RETURNING
+            id
+        INTO 
+            del;
+
+        IF del.id IS NOT NULL THEN
+            RETURN TRUE;
+        ELSE
+            RETURN FALSE;
+        END IF;
+    END;
+$$ LANGUAGE plpgsql;
 
 
 -- Proposals
@@ -772,6 +998,7 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
 $$ LANGUAGE plpgsql;
 
 
+
 -- Search
 CREATE OR REPLACE FUNCTION is_arround("lat" float, "long" float, "user_id" int) RETURNS boolean AS $$
     DECLARE
@@ -833,8 +1060,8 @@ CREATE OR REPLACE FUNCTION has_same_tags("tags_array" text ARRAY[5], "user_id" i
         FOR I IN array_lower(tags_array, 1)..array_upper(tags_array, 1) LOOP
             tags_array[i] := strip(tsvector(tags_array[i]));
         END LOOP;
-RAISE NOTICE 'user_array: %',  user_array;   
-RAISE NOTICE 'tags_array: %',  tags_array;                       
+    RAISE NOTICE 'user_array: %',  user_array;   
+    RAISE NOTICE 'tags_array: %',  tags_array;                       
     -- is user array @> input array?
         RETURN user_array @> tags_array;
     END;

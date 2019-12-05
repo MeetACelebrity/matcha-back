@@ -205,7 +205,7 @@ ALTER TABLE "messages" ADD FOREIGN KEY ("conversation_id") REFERENCES "conversat
 
 ALTER TABLE "conversations_users" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
-ALTER TABLE "conversations_users" ADD FOREIGN KEY ("conversation_id") REFERENCES "users" ("id");
+ALTER TABLE "conversations_users" ADD FOREIGN KEY ("conversation_id") REFERENCES "conversations" ("id");
 
 ALTER TABLE "notifications" ADD FOREIGN KEY ("notified_user_id") REFERENCES "users" ("id");
 
@@ -240,8 +240,6 @@ CREATE UNIQUE INDEX ON "blocks" ("blocker", "blocked");
 CREATE UNIQUE INDEX ON "messages" ("uuid");
 
 CREATE UNIQUE INDEX ON "conversations" ("uuid");
-
-CREATE UNIQUE INDEX ON "conversations_users" ("user_id", "conversation_id");
 
 CREATE UNIQUE INDEX ON "notifications" ("uuid");
 
