@@ -33,7 +33,7 @@ export interface SearchArgs extends ProposalArgs {
     data: string;
     lat: number | null;
     long: number | null;
-    tagsArray: string;
+    tagsArray: string[] | null;
 }
 
 export interface CardUser {
@@ -137,7 +137,7 @@ export async function proposals({
                 hasLikedMe,
                 tags:
                     tags !== null
-                        ? tags.slice(1, -1).map((tag: string) => ({
+                        ? tags.map((tag: string) => ({
                               uuid: tag.slice(1, -1).split(',')[0],
                               text: tag.slice(1, -1).split(',')[1],
                           }))
@@ -195,6 +195,8 @@ export async function search({
             isNaN(minDistance) ||
             isNaN(minScore) ||
             isNaN(minCommonTags) ||
+            (lat !== null && isNaN(lat)) ||
+            (long !== null && isNaN(long)) ||
             (maxAge !== null && isNaN(maxAge)) ||
             (maxDistance !== null && isNaN(maxDistance)) ||
             (maxScore !== null && isNaN(maxScore)) ||
@@ -255,7 +257,7 @@ export async function search({
                 hasLikedMe,
                 tags:
                     tags !== null
-                        ? tags.slice(1, -1).map((tag: string) => ({
+                        ? tags.map((tag: string) => ({
                               uuid: tag.slice(1, -1).split(',')[0],
                               text: tag.slice(1, -1).split(',')[1],
                           }))
