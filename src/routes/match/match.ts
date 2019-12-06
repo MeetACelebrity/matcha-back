@@ -14,7 +14,7 @@ export default function profileRoutes(): express.Router {
         FILTER_INPUT_ERROR = 'FILTER_INPUT_ERROR',
     }
 
-    router.get(
+    router.post(
         '/proposals/:limit/:offset',
         async (
             {
@@ -105,7 +105,7 @@ export default function profileRoutes(): express.Router {
         }
     );
 
-    router.get(
+    router.post(
         '/search/:data/:limit/:offset',
         async (
             {
