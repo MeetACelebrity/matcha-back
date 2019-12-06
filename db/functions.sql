@@ -703,6 +703,100 @@ CREATE OR REPLACE FUNCTION delete_message("message_uuid" uuid, "author_uuid" uui
     END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_convs_users("conv_id" int) RETURNS TABLE ("conv_users_list" text[]) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT
+            ARRAY [
+                users.uuid::text,
+                users.username::text
+            ] as "conv_users_list"
+        FROM
+            conversations_users
+        INNER JOIN
+            users
+        ON
+            conversations_users.user_id = users.id
+        WHERE
+            conversations_users.conversation_id = $1;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_convs_messages("conv_id" int ) RETURNS TABLE ("conv_messages_list" text[]) AS $$
+    BEGIN
+        RETURN QUERY
+        SELECT
+            ARRAY [
+               messages.uuid::text,
+               ( 
+                    SELECT 
+                        users.uuid 
+                    FROM 
+                        users 
+                    WHERE 
+                        users.id = messages.author_id
+                )::text,
+                ( 
+                    SELECT 
+                        users.username 
+                    FROM 
+                        users 
+                    WHERE 
+                        users.id = messages.author_id
+                )::text,
+               messages.payload::text
+            ] as "conv_messages_list"
+        FROM
+            messages
+        WHERE
+            conversation_id = $1;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_convs("user_uuid" uuid) RETURNS TABLE (
+    "uuid" uuid,
+    "conv_users" text[],
+    "conv_messages" text[]
+ ) AS $$
+    DECLARE
+        user_info record;
+    BEGIN
+    -- Get user id
+        SELECT
+            id
+        INTO
+            user_info
+        FROM
+            users
+        WHERE
+            users.uuid = $1;
+
+    -- Get conversations
+        RETURN QUERY
+        SELECT 
+            conversations.uuid as "uuid",
+            ( 
+                SELECT 
+                    array_agg("conv_users_list"::text) as "conv_users"  
+                FROM 
+                    get_convs_users(conversations.id) 
+            ) as "conv_users",
+            (
+                SELECT
+                    array_agg("conv_messages_list"::text) as "conv_messages"
+                FROM
+                    get_convs_messages(conversations.id)
+            ) as "conv_messages"
+        FROM
+            conversations_users
+        INNER JOIN
+            conversations
+        ON
+            conversations_users.conversation_id = conversations.id
+        WHERE
+            conversations_users.user_id = user_info.id;
+    END;
+$$ LANGUAGE plpgsql;
 
 -- Proposals
 CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS int AS $$
