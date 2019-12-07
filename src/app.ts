@@ -12,7 +12,7 @@ import { Database } from './database';
 import { Cloud } from './cloud';
 import { InternalUser, getUserByUuid } from './models/user';
 import { WS, InMessageType, OutMessageType } from './ws';
-import { getConvs } from './models/chat';
+import { getConvs, createMessage } from './models/chat';
 
 export interface Context {
     db: Database;
@@ -75,6 +75,14 @@ async function app() {
                         body.payload.message,
                         [userUuid]
                     );
+
+                    // save in db
+                    await createMessage({
+                        db,
+                        authorUuid: userUuid,
+                        convUuid: body.payload.conversationId,
+                        payload: body.payload.message,
+                    });
                     break;
                 }
                 default:
