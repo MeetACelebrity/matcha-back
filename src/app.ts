@@ -69,13 +69,6 @@ async function app() {
                 case InMessageType.NEW_MESSAGE: {
                     console.log('new message', body, userUuid);
 
-                    // Send the message to all users who have subscribed to this room
-                    ws.broadcastToRoomExclusively(
-                        body.payload.conversationId,
-                        body.payload.message,
-                        [userUuid]
-                    );
-
                     // save in db
                     await createMessage({
                         db,
@@ -83,6 +76,22 @@ async function app() {
                         convUuid: body.payload.conversationId,
                         payload: body.payload.message,
                     });
+
+                    // Send the message to all users who have subscribed to this room
+                    ws.broadcastToRoomExclusively(
+                        body.payload.conversationId,
+                        JSON.stringify({
+                            type: OutMessageType.NEW_MESSAGE,
+                            payload: {
+                                conversationId: body.payload.conversationId,
+                                uuid: 'lol-',
+                                authorUuid: userUuid,
+                                authorUsername: 'yolo',
+                                payload: body.payload.message,
+                            },
+                        }),
+                        [userUuid]
+                    );
                     break;
                 }
                 default:

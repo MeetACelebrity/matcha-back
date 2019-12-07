@@ -21,15 +21,17 @@ export interface DeleteMessage extends ModelArgs {
     authorUuid: string;
 }
 
+export interface ChatMessage {
+    uuid: string;
+    authorUuid: string;
+    authorUsername: string;
+    payload: string;
+}
+
 export interface ConvsFormat {
     uuid: string;
     users: { uuid: string; username: string }[];
-    messages: {
-        uuid: string;
-        authorUuid: string;
-        authorUsername: string;
-        payload: string;
-    }[];
+    messages: ChatMessage[];
 }
 
 export async function createConv({

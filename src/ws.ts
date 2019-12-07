@@ -32,9 +32,17 @@ export interface InMessageNewMessage {
 
 export type InMessage = InMessageInit | InMessageNewMessage;
 
-export interface OutMessage {
-    type: OutMessageType;
+export interface OutMessageNewMessage {
+    type: OutMessageType.NEW_MESSAGE;
+    payload: {
+        uuid: string;
+        authorUuid: string;
+        authorUsername: string;
+        payload: string;
+    };
 }
+
+export type OutMessage = OutMessageNewMessage;
 
 export interface OnMessageCallbackArgs {
     userUuid: string;
