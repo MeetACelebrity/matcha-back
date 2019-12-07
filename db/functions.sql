@@ -565,6 +565,11 @@ CREATE OR REPLACE FUNCTION delete_conv("conv_uuid" uuid) RETURNS boolean AS $$
         WHERE
             uuid = $1;
 
+    -- Delete all messages of the conv
+        DELETE FROM
+            messages
+        WHERE
+            conversation_id = conv.id;
     -- Delete all registered
         DELETE FROM
             conversations_users

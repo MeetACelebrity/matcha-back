@@ -41,9 +41,10 @@ export async function createConv({
         const query = `SELECT create_conv($1, $2, $3)`;
         const uuid3 = uuid();
 
-        const { rowCount } = await db.query(query, [uuid1, uuid2, uuid3]);
-        if (rowCount === 0) return null;
-        return true;
+        const {
+            rows: [result],
+        } = await db.query(query, [uuid1, uuid2, uuid3]);
+        return result.create_conv;
     } catch (e) {
         console.error(e);
         return null;
@@ -54,9 +55,10 @@ export async function deleteConv({ db, uuid }: Conv): Promise<boolean | null> {
     try {
         const query = `SELECT delete_conv($1)`;
 
-        const { rowCount } = await db.query(query, [uuid]);
-        if (rowCount === 0) return null;
-        return true;
+        const {
+            rows: [result],
+        } = await db.query(query, [uuid]);
+        return result.delete_conv;
     } catch (e) {
         console.error(e);
         return null;
@@ -73,14 +75,10 @@ export async function createMessage({
         const query = `SELECT create_message($1, $2, $3, $4)`;
         const messageUuid = uuid();
 
-        const { rowCount } = await db.query(query, [
-            convUuid,
-            authorUuid,
-            payload,
-            messageUuid,
-        ]);
-        if (rowCount === 0) return null;
-        return true;
+        const {
+            rows: [result],
+        } = await db.query(query, [convUuid, authorUuid, payload, messageUuid]);
+        return result.create_message;
     } catch (e) {
         console.error(e);
         return null;
@@ -95,9 +93,10 @@ export async function deleteMessage({
     try {
         const query = `SELECT delete_message($1, $2)`;
 
-        const { rowCount } = await db.query(query, [messageUuid, authorUuid]);
-        if (rowCount === 0) return null;
-        return true;
+        const {
+            rows: [result],
+        } = await db.query(query, [messageUuid, authorUuid]);
+        return result.delete_message;
     } catch (e) {
         console.error(e);
         return null;
@@ -117,21 +116,21 @@ export async function getConvs({
             uuid,
             users:
                 conv_users !== null
-                    ? conv_users.map({
-                          uuid: conv_users.slice(1, -1).split(',')[0],
-                          username: conv_users.slice(1, -1).split(',')[1],
-                      })
+                    ? conv_users.map((convUser: string) => ({
+                          uuid: convUser.slice(1, -1).split(',')[0],
+                          username: convUser.slice(1, -1).split(',')[1],
+                      }))
                     : null,
             messages:
                 conv_messages !== null
-                    ? conv_messages.map({
-                          uuid: conv_messages.slice(1, -1).split(',')[0],
-                          authorUuid: conv_messages.slice(1, -1).split(',')[1],
-                          authorUsername: conv_messages
+                    ? conv_messages.map((convMessage: string) => ({
+                          uuid: convMessage.slice(1, -1).split(',')[0],
+                          authorUuid: convMessage.slice(1, -1).split(',')[1],
+                          authorUsername: convMessage
                               .slice(1, -1)
                               .split(',')[2],
-                          payload: conv_messages.slice(1, -1).split(',')[3],
-                      })
+                          payload: convMessage.slice(1, -1).split(',')[3],
+                      }))
                     : null,
         }));
     } catch (e) {

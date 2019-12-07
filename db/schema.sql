@@ -141,7 +141,8 @@ CREATE TABLE "conversations" (
 
 CREATE TABLE "conversations_users" (
   "user_id" int NOT NULL,
-  "conversation_id" int NOT NULL
+  "conversation_id" int NOT NULL,
+  UNIQUE (user_id, conversation_id)
 );
 
 CREATE TABLE "notifications" (
