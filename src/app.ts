@@ -11,7 +11,7 @@ import routes from './routes';
 import { Database } from './database';
 import { Cloud } from './cloud';
 import { InternalUser, getUserByUuid } from './models/user';
-import { WS } from './ws';
+import { WS, InMessageType, OutMessageType } from './ws';
 
 export interface Context {
     db: Database;
@@ -43,10 +43,10 @@ async function app() {
             console.log(body);
 
             switch (body.type) {
-                case 'INIT':
+                case InMessageType.INIT:
                     connection.send(
                         JSON.stringify({
-                            type: 'CONVERSATIONS',
+                            type: OutMessageType.CONVERSATIONS,
                             payload: {
                                 conversations: [
                                     {
@@ -88,7 +88,7 @@ async function app() {
                     setTimeout(() => {
                         connection.send(
                             JSON.stringify({
-                                type: 'NEW_MESSAGE',
+                                type: OutMessageType.NEW_MESSAGE,
                                 payload: {
                                     conversationId: '123aze',
                                     uuid: 'test_new_message',
