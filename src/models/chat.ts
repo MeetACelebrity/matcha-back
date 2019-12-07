@@ -23,13 +23,13 @@ export interface DeleteMessage extends ModelArgs {
 
 export interface ConvsFormat {
     uuid: string;
-    users: { uuid: string; username: string };
+    users: { uuid: string; username: string }[];
     messages: {
         uuid: string;
         authorUuid: string;
         authorUsername: string;
         payload: string;
-    };
+    }[];
 }
 
 export async function createConv({
@@ -51,13 +51,17 @@ export async function createConv({
     }
 }
 
-export async function deleteConv({ db, uuid }: Conv): Promise<boolean | null> {
+export async function deleteConv({
+    db,
+    uuid1,
+    uuid2,
+}: CreateConv): Promise<boolean | null> {
     try {
-        const query = `SELECT delete_conv($1)`;
+        const query = `SELECT delete_conv($1, $2)`;
 
         const {
             rows: [result],
-        } = await db.query(query, [uuid]);
+        } = await db.query(query, [uuid1, uuid2]);
         return result.delete_conv;
     } catch (e) {
         console.error(e);

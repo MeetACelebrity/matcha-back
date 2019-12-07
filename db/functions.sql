@@ -550,20 +550,26 @@ CREATE OR REPLACE FUNCTION create_conv("uuid1" uuid, "uuid2" uuid, "conv" uuid) 
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION delete_conv("conv_uuid" uuid) RETURNS boolean AS $$
+CREATE OR REPLACE FUNCTION delete_conv("uuid1" uuid, "uuid2" uuid) RETURNS boolean AS $$
     DECLARE
         conv record;
         del record;
     BEGIN
     -- Get id of conv
         SELECT
-            id
+            conversation_id as "id"
         INTO
             conv
         FROM
-            conversations
+            conversations_users
         WHERE
-            uuid = $1;
+            user_id
+        IN (
+            ( SELECT id FROM users WHERE uuid = $1 ),
+            ( SELECT id FROM users WHERE uuid = $2 )
+        )
+        AND
+            user_id = ( SELECT id FROM users WHERE uuid = $1 );
 
     -- Delete all messages of the conv
         DELETE FROM
@@ -802,6 +808,8 @@ CREATE OR REPLACE FUNCTION get_convs("user_uuid" uuid) RETURNS TABLE (
             conversations_users.user_id = user_info.id;
     END;
 $$ LANGUAGE plpgsql;
+
+
 
 -- Proposals
 CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS int AS $$

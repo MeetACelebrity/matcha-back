@@ -1,6 +1,6 @@
 import { InternalUser, ExternalUser, srcToPath } from './user';
 import { ModelArgs } from './index';
-import { createConv } from './chat';
+import { createConv, deleteConv } from './chat';
 
 export interface PublicUser extends Omit<ExternalUser, 'email' | 'roaming'> {
     isLiker: Boolean;
@@ -249,11 +249,12 @@ export async function userLike({
         `;
 
     try {
-        console.log(uuidIn, ' | ', uuidOut);
         const {
             rows: [result],
         } = await db.query(query, [uuidIn, uuidOut]);
+        // send notif to uuidOut: "uuidIn liked your profile"
         if (result.is_matched === true) {
+            // send notif to uuidOut: "Matched ! : uuidIn liked back your profile"
             await createConv({ db, uuid1: uuidIn, uuid2: uuidOut });
         }
         return true;
@@ -302,11 +303,19 @@ export async function userUnLike({
     WHERE
         liker =  (SELECT id FROM liker_id)
     AND
-        liked = (SELECT id FROM liked_id)`;
+        liked = (SELECT id FROM liked_id)
+     RETURNING
+            is_liked((SELECT id FROM liked_id), (SELECT id FROM liker_id))`;
 
     try {
-        const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
-        if (rowCount === 0) return null;
+        const {
+            rows: [result],
+        } = await db.query(query, [uuidIn, uuidOut]);
+
+        if (result.is_liked === true) {
+            // send notif to uuidOut: "uuidIn unlike your profile :("
+            await deleteConv({ db, uuid1: uuidIn, uuid2: uuidOut });
+        }
         return true;
     } catch (e) {
         console.error(e);
@@ -366,6 +375,7 @@ export async function userSee({
         const {
             rows: [liked],
         } = await db.query(query, [uuidIn, uuidOut]);
+        // send notif uuidOut: "uuidIn see your profile"
         return liked;
     } catch (e) {
         console.error(e);
