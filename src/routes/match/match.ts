@@ -78,7 +78,7 @@ export default function profileRoutes(): express.Router {
                     offset: Number(offset),
                     orderBy: orderBy === undefined ? null : orderBy,
                     order: order === undefined ? 'ASC' : order,
-                    minAge: minAge === undefined ? 0 : Number(minAge),
+                    minAge: minAge === undefined ? 1 : Number(minAge),
                     maxAge: maxAge === undefined ? null : Number(maxAge),
                     minDistance:
                         minDistance === undefined ? 0 : Number(minDistance),

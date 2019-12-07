@@ -1,5 +1,6 @@
 import { InternalUser, ExternalUser, srcToPath } from './user';
 import { ModelArgs } from './index';
+import { createConv } from './chat';
 
 export interface PublicUser extends Omit<ExternalUser, 'email' | 'roaming'> {
     isLiker: Boolean;
@@ -243,11 +244,18 @@ export async function userLike({
             (SELECT id FROM liker_id),
             (SELECT id FROM liked_id)
         )
+        RETURNING
+            is_matched((SELECT id FROM liker_id), (SELECT id FROM liked_id))
         `;
 
     try {
-        const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
-        if (rowCount === 0) return null;
+        console.log(uuidIn, ' | ', uuidOut);
+        const {
+            rows: [result],
+        } = await db.query(query, [uuidIn, uuidOut]);
+        if (result.is_matched === true) {
+            await createConv({ db, uuid1: uuidIn, uuid2: uuidOut });
+        }
         return true;
     } catch (e) {
         console.error(e);
