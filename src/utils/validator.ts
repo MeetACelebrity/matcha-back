@@ -466,9 +466,33 @@ export class ValidatorObject {
             throw new Error(`The key ${incorrectKey} is incorrect !`);
         }
 
-        this.innerObject = keys;
+        this.innerObject = {
+            ...this.innerObject,
+            ...keys,
+        };
 
         return this;
+    }
+
+    /**
+     * Extend the properties of a `ValidatorObject` with those of another `ValidatorObject`.
+     * Overrides the existing properties.
+     */
+    extend(object: ValidatorObject): this {
+        this.innerObject = {
+            ...this.innerObject,
+            ...object.innerObject,
+        };
+
+        return this;
+    }
+
+    copy(): ValidatorObject {
+        const object = new ValidatorObject();
+
+        object.innerObject = this.innerObject;
+
+        return object;
     }
 
     valid(obj: object): boolean {

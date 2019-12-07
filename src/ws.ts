@@ -10,6 +10,7 @@ interface OpenConnexion {
 
 export enum InMessageType {
     INIT = 'INIT',
+    NEW_MESSAGE = 'NEW_MESSAGE',
 }
 
 export enum OutMessageType {
@@ -17,15 +18,26 @@ export enum OutMessageType {
     NEW_MESSAGE = 'NEW_MESSAGE',
 }
 
-export interface InMessage {
-    type: InMessageType;
+export interface InMessageInit {
+    type: InMessageType.INIT;
 }
+
+export interface InMessageNewMessage {
+    type: InMessageType.NEW_MESSAGE;
+    payload: {
+        conversationId: string;
+        message: string;
+    };
+}
+
+export type InMessage = InMessageInit | InMessageNewMessage;
 
 export interface OutMessage {
     type: OutMessageType;
 }
 
 export interface OnMessageCallbackArgs {
+    userUuid: string;
     body: InMessage;
     request: request;
     connection: connection;
@@ -41,9 +53,19 @@ export interface OnCloseCallbackArgs {
 type OnMessageCallback = (args: OnMessageCallbackArgs) => Promise<void> | void;
 type OnCloseCallback = (args: OnCloseCallbackArgs) => Promise<void> | void;
 
-const schema = Validator.object().keys({
+const basicInMessageSchema = Validator.object().keys({
     type: Validator.string().whitelist(Object.values(InMessageType)),
 });
+
+const schema = Validator.alternatives([
+    basicInMessageSchema,
+    basicInMessageSchema.copy().keys({
+        payload: Validator.object().keys({
+            conversationId: Validator.string(),
+            message: Validator.string(),
+        }),
+    }),
+]);
 
 export class WS extends server {
     private static ALLOWED_ORIGINS = ['http://localhost:3000'];
@@ -128,11 +150,8 @@ export class WS extends server {
 
                         const body = JSON.parse(message.utf8Data);
 
-                        const validationResult = Validator.validate(
-                            schema,
-                            body
-                        );
-                        if (validationResult !== true) {
+                        const validationResult = schema.one(body);
+                        if (!validationResult) {
                             console.error(
                                 'Invalid message',
                                 validationResult,
@@ -145,6 +164,7 @@ export class WS extends server {
                             body,
                             request,
                             connection,
+                            userUuid: uuid,
                         });
                     } catch (e) {
                         console.error('Error on message handler', e);

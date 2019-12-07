@@ -12,6 +12,7 @@ import { Database } from './database';
 import { Cloud } from './cloud';
 import { InternalUser, getUserByUuid } from './models/user';
 import { WS, InMessageType, OutMessageType } from './ws';
+import { getConvs } from './models/chat';
 
 export interface Context {
     db: Database;
@@ -39,64 +40,43 @@ async function app() {
     const ws = new WS(httpServer, store);
 
     ws.setup(
-        ({ connection, body }) => {
-            console.log(body);
-
+        async ({ connection, body, userUuid }) => {
             switch (body.type) {
-                case InMessageType.INIT:
+                case InMessageType.INIT: {
+                    const conversations = await getConvs({
+                        db,
+                        uuid: userUuid,
+                    });
+                    if (conversations === null) {
+                        // Send error to client
+                        return;
+                    }
+
+                    conversations.forEach(({ uuid: roomUuid }) => {
+                        ws.subscribeToRoom(roomUuid, userUuid);
+                    });
+
                     connection.send(
                         JSON.stringify({
                             type: OutMessageType.CONVERSATIONS,
                             payload: {
-                                conversations: [
-                                    {
-                                        uuid: '123aze',
-                                        title: 'Baptiste Devessier',
-                                        description: 'Je suis un zboub',
-                                        picture:
-                                            'https://trello-attachments.s3.amazonaws.com/5dcbd72c39989f2478c2646d/300x166/e7586ac2b0e95ab0dd217ca9895217a4/Capture_d%E2%80%99e%CC%81cran_2019-11-20_a%CC%80_00.30.13.png',
-                                        messages: [1, 2, 3, 4, 5, 6],
-                                    },
-                                    {
-                                        uuid: '123azex',
-                                        title: 'Antoine Duléry',
-                                        description: 'Je suis un petit zboub',
-                                        picture:
-                                            'https://trello-attachments.s3.amazonaws.com/5dcbd72c39989f2478c2646d/300x166/e7586ac2b0e95ab0dd217ca9895217a4/Capture_d%E2%80%99e%CC%81cran_2019-11-20_a%CC%80_00.30.13.png',
-                                        messages: [
-                                            1,
-                                            2,
-                                            4,
-                                            5,
-                                            6,
-                                            1,
-                                            3,
-                                            5,
-                                            6,
-                                            7,
-                                            6,
-                                            3,
-                                            5,
-                                            3,
-                                        ],
-                                    },
-                                ],
+                                conversations,
                             },
                         })
                     );
-
-                    setTimeout(() => {
-                        connection.send(
-                            JSON.stringify({
-                                type: OutMessageType.NEW_MESSAGE,
-                                payload: {
-                                    conversationId: '123aze',
-                                    uuid: 'test_new_message',
-                                },
-                            })
-                        );
-                    }, 10000);
                     break;
+                }
+                case InMessageType.NEW_MESSAGE: {
+                    console.log('new message', body, userUuid);
+
+                    // Send the message to all users who have subscribed to this room
+                    ws.broadcastToRoomExclusively(
+                        body.payload.conversationId,
+                        body.payload.message,
+                        [userUuid]
+                    );
+                    break;
+                }
                 default:
                     return;
             }
