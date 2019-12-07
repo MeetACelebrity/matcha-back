@@ -8,16 +8,25 @@ interface OpenConnexion {
     createdAt: Date;
 }
 
-export enum MessageType {
+export enum InMessageType {
     INIT = 'INIT',
 }
 
-export interface Message {
-    type: MessageType;
+export enum OutMessageType {
+    CONVERSATIONS = 'CONVERSATIONS',
+    NEW_MESSAGE = 'NEW_MESSAGE',
+}
+
+export interface InMessage {
+    type: InMessageType;
+}
+
+export interface OutMessage {
+    type: OutMessageType;
 }
 
 export interface OnMessageCallbackArgs {
-    body: Message;
+    body: InMessage;
     request: request;
     connection: connection;
 }
@@ -33,7 +42,7 @@ type OnMessageCallback = (args: OnMessageCallbackArgs) => Promise<void> | void;
 type OnCloseCallback = (args: OnCloseCallbackArgs) => Promise<void> | void;
 
 const schema = Validator.object().keys({
-    type: Validator.string().whitelist(Object.values(MessageType)),
+    type: Validator.string().whitelist(Object.values(InMessageType)),
 });
 
 export class WS extends server {
