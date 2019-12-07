@@ -4,7 +4,8 @@ import authRoutes from './auth/auth';
 import profileRoutes from './profile/profile';
 import publicUserRoutes from './user/user';
 import matchingRoutes from './match/match';
-import { internalUserToExternalUser } from '../models/user';
+import { internalUserToExternalUser, getUserByEmail } from '../models/user';
+import { getUserOfConv } from '../models/chat';
 
 export default function routes(server: Express) {
     server.use('/auth', authRoutes());

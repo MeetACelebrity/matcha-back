@@ -138,3 +138,36 @@ export async function getConvs({
         return null;
     }
 }
+
+export async function getUserOfConv({ db, uuid }: Conv) {
+    try {
+        const query = `
+            WITH
+                id_conv
+            AS (
+                SELECT
+                    id
+                FROM
+                    conversations
+                WHERE
+                    uuid = $1
+            )
+            SELECT 
+                array_agg("conv_users_list"::text) as "convUsers"
+            FROM
+                get_convs_users((SELECT id FROM id_conv))
+            
+            `;
+
+        const { rows: result } = await db.query(query, [uuid]);
+
+        return result.map(({ convUsers }) => ({
+            uuids: convUsers.map(
+                (user: string) => user.slice(1, -1).split(',')[0]
+            ),
+        }));
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
