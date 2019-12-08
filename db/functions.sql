@@ -720,7 +720,21 @@ CREATE OR REPLACE FUNCTION get_convs_users("conv_id" int) RETURNS TABLE ("conv_u
         SELECT
             ARRAY [
                 users.uuid::text,
-                users.username::text
+                users.username::text,
+                (
+                    SELECT
+                        images.src
+                    FROM
+                        profile_pictures
+                    INNER JOIN
+                        images
+                    ON
+                        profile_pictures.image_id = images.id
+                    WHERE
+                        profile_pictures.image_nb = 0
+                    AND
+                        profile_pictures.user_id = users.id
+                )
             ] as "conv_users_list"
         FROM
             conversations_users
@@ -755,7 +769,8 @@ CREATE OR REPLACE FUNCTION get_convs_messages("conv_id" int ) RETURNS TABLE ("co
                     WHERE 
                         users.id = messages.author_id
                 )::text,
-               messages.payload::text
+               messages.payload::text,
+               messages.created_at::text
             ] as "conv_messages_list"
         FROM
             messages

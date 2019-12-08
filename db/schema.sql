@@ -130,7 +130,8 @@ CREATE TABLE "messages" (
   "uuid" uuid NOT NULL,
   "author_id" int NOT NULL,
   "conversation_id" int NOT NULL,
-  "payload" text NOT NULL
+  "payload" text NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "conversations" (

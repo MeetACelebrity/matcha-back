@@ -1,5 +1,6 @@
 import { ModelArgs } from './index';
 import uuid from 'uuid/v4';
+import { srcToPath } from './user';
 
 export interface CreateConv extends ModelArgs {
     uuid1: string;
@@ -117,7 +118,6 @@ export async function getConvs({
         const query = `SELECT * FROM get_convs($1)`;
 
         const { rows: convs } = await db.query(query, [uuid]);
-
         return convs.map(({ uuid, conv_users, conv_messages }) => ({
             uuid,
             users:
@@ -125,6 +125,9 @@ export async function getConvs({
                     ? conv_users.map((convUser: string) => ({
                           uuid: convUser.slice(1, -1).split(',')[0],
                           username: convUser.slice(1, -1).split(',')[1],
+                          profilePic: srcToPath(
+                              convUser.slice(1, -1).split(',')[2]
+                          ),
                       }))
                     : null,
             messages:
@@ -136,6 +139,7 @@ export async function getConvs({
                               .slice(1, -1)
                               .split(',')[2],
                           payload: convMessage.slice(1, -1).split(',')[3],
+                          createdAt: convMessage.slice(1, -1).split(',')[4],
                       }))
                     : null,
         }));
