@@ -154,7 +154,9 @@ export async function getConvs({
                               .slice(1, -1)
                               .split(',')[2],
                           payload: convMessage.slice(1, -1).split(',')[3],
-                          createdAt: convMessage.slice(1, -1).split(',')[4],
+                          createdAt: Date.parse(
+                              convMessage.slice(1, -1).split(',')[4]
+                          ),
                       }))
                     : null,
         }));
