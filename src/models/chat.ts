@@ -77,15 +77,30 @@ export async function createMessage({
     convUuid,
     authorUuid,
     payload,
-}: CreateMessage): Promise<boolean | null> {
+}: CreateMessage): Promise<{
+    uuid: string;
+    authorUuid: string;
+    authorUsername: string;
+    payload: string;
+    createdAt: number;
+} | null> {
     try {
-        const query = `SELECT create_message($1, $2, $3, $4)`;
+        const query = `SELECT create_message($1, $2, $3, $4), (SELECT username FROM users WHERE uuid = $2)`;
         const messageUuid = uuid();
 
         const {
             rows: [result],
         } = await db.query(query, [convUuid, authorUuid, payload, messageUuid]);
-        return result.create_message;
+        if (result.create_message === true) {
+            return {
+                authorUuid,
+                payload,
+                uuid: messageUuid,
+                authorUsername: result.username,
+                createdAt: Date.now(),
+            };
+        }
+        return null;
     } catch (e) {
         console.error(e);
         return null;
