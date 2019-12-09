@@ -167,6 +167,8 @@ export interface ExternalUser {
     givenName: string;
     familyName: string;
     username: string;
+    isOnline: boolean;
+    lastSeen: number;
     email: string;
     score: number;
     createdAt: string;
@@ -203,6 +205,8 @@ export function internalUserToExternalUser({
     givenName,
     familyName,
     username,
+    isOnline,
+    lastSeen,
     email,
     createdAt,
     confirmed,
@@ -223,6 +227,8 @@ export function internalUserToExternalUser({
         familyName,
         username,
         email,
+        isOnline,
+        lastSeen,
         createdAt,
         confirmed,
         birthday,
@@ -382,6 +388,8 @@ export async function getUserByUuid({
             users.confirmed,
             users.location,
             users.roaming,
+            users.online as "isOnline",
+            users.last_seen as "lastSeen",
             extended_profiles.birthday,
             extended_profiles.gender,
             extended_profiles.sexual_orientation as "sexualOrientation",

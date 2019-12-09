@@ -5,7 +5,7 @@ import profileRoutes from './profile/profile';
 import publicUserRoutes from './user/user';
 import matchingRoutes from './match/match';
 import { internalUserToExternalUser, getUserByEmail } from '../models/user';
-// import { getConvs } from '../models/chat';
+// import { seenNotif } from '../models/chat';
 
 export default function routes(server: Express) {
     server.use('/auth', authRoutes());
@@ -22,9 +22,9 @@ export default function routes(server: Express) {
         res.json(internalUserToExternalUser(res.locals.user));
     });
     // server.get('/test', async (req, res) => {
-    //     const result = await getConvs({
+    //     const result = await seenNotif({
     //         db: res.locals.db,
-    //         uuid: req.body.uuid,
+    //         uuid: req.body.uuid1,
     //     });
     //     res.json({ result });
     // });

@@ -35,6 +35,23 @@ export interface ConvsFormat {
     messages: ChatMessage[];
 }
 
+export enum NotificationType {
+    'GOT_LIKE',
+    'GOT_VISIT',
+    'GOT_MESSAGE',
+    'GOT_LIKE_MUTUAL',
+    'GOT_UNLIKE_MUTUAL',
+}
+export interface SetNotif extends ModelArgs {
+    destUuid: string;
+    sendUuid: string;
+    type: NotificationType;
+}
+
+export interface Notif extends ModelArgs {
+    uuid: string;
+}
+
 export async function createConv({
     db,
     uuid1,
@@ -193,6 +210,112 @@ export async function getUserOfConv({ db, uuid }: Conv) {
                 (user: string) => user.slice(1, -1).split(',')[0]
             ),
         }));
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function setNotif({
+    db,
+    destUuid,
+    sendUuid,
+    type,
+}: SetNotif): Promise<true | null> {
+    const query = `
+        WITH
+            id_dest 
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $2
+        ), 
+            id_send
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $3
+        )
+        INSERT INTO
+            notifications (
+                uuid,
+                type,
+                notified_user_id,
+                notifier_user_id
+            )
+        VALUES (
+                $1,
+                $4,
+                (SELECT id FROM id_dest),
+                (SELECT id FROM id_send)
+            )`;
+
+    try {
+        const notifUuid = uuid();
+        const { rowCount } = await db.query(query, [
+            notifUuid,
+            destUuid,
+            sendUuid,
+            type,
+        ]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function seenNotif({ db, uuid }: Notif): Promise<true | null> {
+    const query = `
+            UPDATE
+                notifications
+            SET
+                seen = TRUE
+            WHERE
+                uuid = $1;`;
+    try {
+        const { rowCount } = await db.query(query, [uuid]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+// get all notfi of users
+//      returns uuid, generate text, seen
+
+export async function getNotifs({ db, uuid }: Notif) {
+    const query = `
+        WITH
+            id_user
+        AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $1
+        )
+        SELECT
+            *
+        FROM
+            notifications
+        WHERE
+            notified_user_id = ( SELECT id FROM id_user); 
+            `;
+
+    try {
+        const { rows: notifications } = await db.query(query, [uuid]);
+        console.log(notifications);
+        // send back: [ { uuid, message, seen}, {...}, ...]
     } catch (e) {
         console.error(e);
         return null;

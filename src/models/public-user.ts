@@ -1,6 +1,7 @@
 import { InternalUser, ExternalUser, srcToPath } from './user';
 import { ModelArgs } from './index';
 import { createConv, deleteConv } from './chat';
+import { Database } from '../database';
 
 export interface PublicUser extends Omit<ExternalUser, 'email' | 'roaming'> {
     isLiker: Boolean;
@@ -32,6 +33,8 @@ export function internalUserToPublicUser({
     familyName,
     username,
     email,
+    isOnline,
+    lastSeen,
     createdAt,
     confirmed,
     birthday,
@@ -50,6 +53,8 @@ export function internalUserToPublicUser({
         givenName,
         familyName,
         username,
+        isOnline,
+        lastSeen,
         createdAt,
         confirmed,
         birthday,
@@ -516,6 +521,40 @@ export async function userNotInterested({
 
     try {
         const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function onlineUser({
+    db,
+    uuid,
+    value,
+}: {
+    db: Database;
+    uuid: string;
+    value: boolean;
+}): Promise<true | null> {
+    // true, update online filed
+    const query = `
+        UPDATE
+            users
+        SET
+            online = $2,
+            last_seen = $3
+        WHERE
+            uuid = $1`;
+
+    try {
+        const time = new Date();
+        const { rowCount } = await db.query(query, [
+            uuid,
+            Boolean(value),
+            time.toISOString(),
+        ]);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {

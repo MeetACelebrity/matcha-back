@@ -42,6 +42,8 @@ CREATE TABLE "users" (
   "email" text NOT NULL,
   "password" text NOT NULL,
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  "last_seen" timestamp ,
+  "online" boolean NOT NULL DEFAULT FALSE,
   "extended_profile" int,
   "confirmed" bool NOT NULL DEFAULT false,
   "roaming" roaming_preferences NOT NULL DEFAULT 'NOT_SET',
@@ -151,7 +153,8 @@ CREATE TABLE "notifications" (
   "uuid" uuid NOT NULL,
   "type" notification_type NOT NULL,
   "notified_user_id" int NOT NULL,
-  "notifier_user_id" int NOT NULL
+  "notifier_user_id" int NOT NULL,
+  "seen" boolean NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE "tags" (
