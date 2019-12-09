@@ -1,6 +1,6 @@
 import { InternalUser, ExternalUser, srcToPath } from './user';
 import { ModelArgs } from './index';
-import { createConv, deleteConv } from './chat';
+import { createConv, deleteConv, setNotif, NotificationType } from './chat';
 import { Database } from '../database';
 
 export interface PublicUser extends Omit<ExternalUser, 'email' | 'roaming'> {
@@ -257,10 +257,24 @@ export async function userLike({
         const {
             rows: [result],
         } = await db.query(query, [uuidIn, uuidOut]);
-        // send notif to uuidOut: "uuidIn liked your profile"
+
         if (result.is_matched === true) {
             // send notif to uuidOut: "Matched ! : uuidIn liked back your profile"
             await createConv({ db, uuid1: uuidIn, uuid2: uuidOut });
+            await setNotif({
+                db,
+                destUuid: uuidOut,
+                sendUuid: uuidIn,
+                type: NotificationType.GOT_LIKE_MUTUAL,
+            });
+        } else {
+            // send notif to uuidOut: "uuidIn liked your profile"
+            await setNotif({
+                db,
+                destUuid: uuidOut,
+                sendUuid: uuidIn,
+                type: NotificationType.GOT_LIKE,
+            });
         }
         return true;
     } catch (e) {
@@ -319,6 +333,12 @@ export async function userUnLike({
 
         if (result.is_liked === true) {
             // send notif to uuidOut: "uuidIn unlike your profile :("
+            await setNotif({
+                db,
+                destUuid: uuidOut,
+                sendUuid: uuidIn,
+                type: NotificationType.GOT_UNLIKE_MUTUAL,
+            });
             await deleteConv({ db, uuid1: uuidIn, uuid2: uuidOut });
         }
         return true;
@@ -381,6 +401,12 @@ export async function userSee({
             rows: [liked],
         } = await db.query(query, [uuidIn, uuidOut]);
         // send notif uuidOut: "uuidIn see your profile"
+        await setNotif({
+            db,
+            destUuid: uuidOut,
+            sendUuid: uuidIn,
+            type: NotificationType.GOT_VISIT,
+        });
         return liked;
     } catch (e) {
         console.error(e);
