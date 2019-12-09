@@ -824,8 +824,6 @@ CREATE OR REPLACE FUNCTION get_convs("user_uuid" uuid) RETURNS TABLE (
     END;
 $$ LANGUAGE plpgsql;
 
-
-
 -- Proposals
 CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS int AS $$
     DECLARE

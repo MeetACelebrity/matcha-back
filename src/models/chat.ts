@@ -50,6 +50,7 @@ export interface SetNotif extends ModelArgs {
 
 export interface Notif extends ModelArgs {
     uuid: string;
+    seen: boolean;
 }
 
 export async function createConv({
@@ -289,10 +290,8 @@ export async function seenNotif({ db, uuid }: Notif): Promise<true | null> {
         return null;
     }
 }
-// get all notfi of users
-//      returns uuid, generate text, seen
 
-export async function getNotifs({ db, uuid }: Notif) {
+export async function getNotifs({ db, uuid, seen }: Notif) {
     const query = `
         WITH
             id_user
@@ -305,17 +304,35 @@ export async function getNotifs({ db, uuid }: Notif) {
                 uuid = $1
         )
         SELECT
-            *
+            uuid,
+            type,
+            (SELECT username FROM users WHERE id = notifications.notifier_user_id),
+            seen
         FROM
             notifications
         WHERE
-            notified_user_id = ( SELECT id FROM id_user); 
+            notified_user_id = ( SELECT id FROM id_user)
+        AND
+            seen = $2; 
             `;
 
     try {
-        const { rows: notifications } = await db.query(query, [uuid]);
-        console.log(notifications);
-        // send back: [ { uuid, message, seen}, {...}, ...]
+        if (typeof seen !== 'boolean') return null;
+        const notificationMessages = new Map([
+            ['GOT_LIKE', ' liked your profile'],
+            ['GOT_VISIT', ' visit your profile'],
+            ['GOT_MESSAGE', ' send you a message'],
+            ['GOT_LIKE_MUTUAL', ' has matched with you'],
+            ['GOT_UNLIKE_MUTUAL', ' has unmatched you '],
+        ]);
+
+        const { rows: notifications } = await db.query(query, [uuid, seen]);
+
+        return notifications.map(({ uuid, type, username, seen }) => ({
+            uuid,
+            seen,
+            message: username + notificationMessages.get(type),
+        }));
     } catch (e) {
         console.error(e);
         return null;
