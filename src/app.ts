@@ -69,8 +69,7 @@ async function app() {
                 case InMessageType.NEW_MESSAGE: {
                     console.log('new message', body, userUuid);
 
-                    // save in db
-                    await createMessage({
+                    const message = await createMessage({
                         db,
                         authorUuid: userUuid,
                         convUuid: body.payload.conversationId,
@@ -84,10 +83,7 @@ async function app() {
                             type: OutMessageType.NEW_MESSAGE,
                             payload: {
                                 conversationId: body.payload.conversationId,
-                                uuid: 'lol-',
-                                authorUuid: userUuid,
-                                authorUsername: 'yolo',
-                                payload: body.payload.message,
+                                ...message,
                             },
                         }),
                         [userUuid]
