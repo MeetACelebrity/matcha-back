@@ -193,7 +193,7 @@ class User {
     try {
         await db.query('BEGIN');
 
-        const USERS_COUNT = 501;
+        const USERS_COUNT = 10;
 
         for (let index = 0; index < USERS_COUNT; index += 1) {
             const user = new User();

@@ -1,6 +1,7 @@
 import { ModelArgs } from './index';
 import uuid from 'uuid/v4';
 import { srcToPath } from './user';
+import { WS, OutMessageType } from '../ws';
 
 export interface CreateConv extends ModelArgs {
     uuid1: string;
@@ -36,13 +37,14 @@ export interface ConvsFormat {
 }
 
 export enum NotificationType {
-    'GOT_LIKE',
-    'GOT_VISIT',
-    'GOT_MESSAGE',
-    'GOT_LIKE_MUTUAL',
-    'GOT_UNLIKE_MUTUAL',
+    GOT_LIKE = 'GOT_LIKE',
+    GOT_VISIT = 'GOT_VISIT',
+    GOT_MESSAGE = 'GOT_MESSAGE',
+    GOT_LIKE_MUTUAL = 'GOT_LIKE_MUTUAL',
+    GOT_UNLIKE_MUTUAL = 'GOT_UNLIKE_MUTUAL',
 }
 export interface SetNotif extends ModelArgs {
+    ws: WS;
     destUuid: string;
     sendUuid: string;
     type: NotificationType;
@@ -217,8 +219,27 @@ export async function getUserOfConv({ db, uuid }: Conv) {
     }
 }
 
+export function generateNotifMessage({
+    username,
+    type,
+}: {
+    username: string;
+    type: NotificationType;
+}): string {
+    const notificationMessages = new Map([
+        ['GOT_LIKE', ' liked your profile'],
+        ['GOT_VISIT', ' visit your profile'],
+        ['GOT_MESSAGE', ' send you a message'],
+        ['GOT_LIKE_MUTUAL', ' has matched with you'],
+        ['GOT_UNLIKE_MUTUAL', ' has unmatched you '],
+    ]);
+
+    return username + notificationMessages.get(String(type));
+}
+
 export async function setNotif({
     db,
+    ws,
     destUuid,
     sendUuid,
     type,
@@ -228,7 +249,7 @@ export async function setNotif({
             id_dest 
         AS (
             SELECT
-                id
+                id, username
             FROM
                 users
             WHERE
@@ -255,17 +276,29 @@ export async function setNotif({
                 $4,
                 (SELECT id FROM id_dest),
                 (SELECT id FROM id_send)
-            )`;
+            )
+        RETURNING
+            (SELECT username FROM id_dest)`;
 
     try {
         const notifUuid = uuid();
-        const { rowCount } = await db.query(query, [
-            notifUuid,
-            destUuid,
-            sendUuid,
-            type,
-        ]);
-        if (rowCount === 0) return null;
+        const {
+            rows: [user],
+        } = await db.query(query, [notifUuid, destUuid, sendUuid, type]);
+
+        console.log(user, '|', user.username);
+        // notif user
+        ws.broadcastToUsers([destUuid], {
+            type: OutMessageType.NEW_NOTIFICATION,
+            payload: {
+                uuid: notifUuid,
+                message: generateNotifMessage({
+                    type,
+                    username: user.username,
+                }),
+                seen: false,
+            },
+        });
         return true;
     } catch (e) {
         console.error(e);
@@ -318,20 +351,13 @@ export async function getNotifs({ db, uuid, seen }: Notif) {
 
     try {
         if (typeof seen !== 'boolean') return null;
-        const notificationMessages = new Map([
-            ['GOT_LIKE', ' liked your profile'],
-            ['GOT_VISIT', ' visit your profile'],
-            ['GOT_MESSAGE', ' send you a message'],
-            ['GOT_LIKE_MUTUAL', ' has matched with you'],
-            ['GOT_UNLIKE_MUTUAL', ' has unmatched you '],
-        ]);
 
         const { rows: notifications } = await db.query(query, [uuid, seen]);
 
         return notifications.map(({ uuid, type, username, seen }) => ({
             uuid,
             seen,
-            message: username + notificationMessages.get(type),
+            message: generateNotifMessage({ username, type }),
         }));
     } catch (e) {
         console.error(e);

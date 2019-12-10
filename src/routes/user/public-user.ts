@@ -34,6 +34,7 @@ export default function publicUser(router: express.Router) {
 
             const seeUser = await userSee({
                 db: res.locals.db,
+                ws: res.locals.ws,
                 uuidIn: user.uuid,
                 uuidOut: req.params.uuid,
             });
@@ -114,6 +115,7 @@ export default function publicUser(router: express.Router) {
 
             const result = await userLike({
                 db: res.locals.db,
+                ws: res.locals.ws,
                 uuidIn: user.uuid,
                 uuidOut: req.params.uuid,
             });
@@ -141,6 +143,7 @@ export default function publicUser(router: express.Router) {
 
             const result = await userUnLike({
                 db: res.locals.db,
+                ws: res.locals.ws,
                 uuidIn: user.uuid,
                 uuidOut: req.params.uuid,
             });

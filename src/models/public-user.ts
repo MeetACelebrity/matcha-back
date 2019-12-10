@@ -1,7 +1,14 @@
 import { InternalUser, ExternalUser, srcToPath } from './user';
 import { ModelArgs } from './index';
-import { createConv, deleteConv, setNotif, NotificationType } from './chat';
+import {
+    createConv,
+    deleteConv,
+    setNotif,
+    NotificationType,
+    generateNotifMessage,
+} from './chat';
 import { Database } from '../database';
+import { WS } from '../ws';
 
 export interface PublicUser extends Omit<ExternalUser, 'email' | 'roaming'> {
     isLiker: Boolean;
@@ -15,6 +22,12 @@ export interface HistoryUser {
 }
 
 export interface UserLikeArgs extends ModelArgs {
+    ws: WS;
+    uuidIn: string;
+    uuidOut: string;
+}
+
+export interface UserActionArgs extends ModelArgs {
     uuidIn: string;
     uuidOut: string;
 }
@@ -206,6 +219,7 @@ export async function getLikerByUuid({
 
 export async function userLike({
     db,
+    ws,
     uuidIn,
     uuidOut,
 }: UserLikeArgs): Promise<true | null> {
@@ -263,6 +277,7 @@ export async function userLike({
             await createConv({ db, uuid1: uuidIn, uuid2: uuidOut });
             await setNotif({
                 db,
+                ws,
                 destUuid: uuidOut,
                 sendUuid: uuidIn,
                 type: NotificationType.GOT_LIKE_MUTUAL,
@@ -271,6 +286,7 @@ export async function userLike({
             // send notif to uuidOut: "uuidIn liked your profile"
             await setNotif({
                 db,
+                ws,
                 destUuid: uuidOut,
                 sendUuid: uuidIn,
                 type: NotificationType.GOT_LIKE,
@@ -285,6 +301,7 @@ export async function userLike({
 
 export async function userUnLike({
     db,
+    ws,
     uuidIn,
     uuidOut,
 }: UserLikeArgs): Promise<true | null> {
@@ -335,6 +352,7 @@ export async function userUnLike({
             // send notif to uuidOut: "uuidIn unlike your profile :("
             await setNotif({
                 db,
+                ws,
                 destUuid: uuidOut,
                 sendUuid: uuidIn,
                 type: NotificationType.GOT_UNLIKE_MUTUAL,
@@ -350,6 +368,7 @@ export async function userUnLike({
 
 export async function userSee({
     db,
+    ws,
     uuidIn,
     uuidOut,
 }: UserLikeArgs): Promise<{ liker: number } | null> {
@@ -403,6 +422,7 @@ export async function userSee({
         // send notif uuidOut: "uuidIn see your profile"
         await setNotif({
             db,
+            ws,
             destUuid: uuidOut,
             sendUuid: uuidIn,
             type: NotificationType.GOT_VISIT,
@@ -418,7 +438,7 @@ export async function userBlock({
     db,
     uuidIn,
     uuidOut,
-}: UserLikeArgs): Promise<true | null> {
+}: UserActionArgs): Promise<true | null> {
     const query = `
         WITH 
             blocker_id
@@ -465,7 +485,7 @@ export async function userReport({
     db,
     uuidIn,
     uuidOut,
-}: UserLikeArgs): Promise<true | null> {
+}: UserActionArgs): Promise<true | null> {
     const query = `
         WITH 
             reporter_id
@@ -512,7 +532,7 @@ export async function userNotInterested({
     db,
     uuidIn,
     uuidOut,
-}: UserLikeArgs): Promise<true | null> {
+}: UserActionArgs): Promise<true | null> {
     const query = `
         WITH 
             actor_id
