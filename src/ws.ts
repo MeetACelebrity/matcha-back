@@ -16,6 +16,7 @@ export enum InMessageType {
 export enum OutMessageType {
     CONVERSATIONS = 'CONVERSATIONS',
     NEW_MESSAGE = 'NEW_MESSAGE',
+    NEW_NOTIFICATION = 'NEW_NOTIFICATION',
 }
 
 export interface InMessageInit {
@@ -35,6 +36,7 @@ export type InMessage = InMessageInit | InMessageNewMessage;
 export interface OutMessageNewMessage {
     type: OutMessageType.NEW_MESSAGE;
     payload: {
+        conversationId: string;
         uuid: string;
         authorUuid: string;
         authorUsername: string;
@@ -42,7 +44,16 @@ export interface OutMessageNewMessage {
     };
 }
 
-export type OutMessage = OutMessageNewMessage;
+export interface OutMessageNewNotification {
+    type: OutMessageType.NEW_NOTIFICATION;
+    payload: {
+        uuid: string;
+        message: string;
+        seen: boolean;
+    };
+}
+
+export type OutMessage = OutMessageNewMessage | OutMessageNewNotification;
 
 export interface OnMessageCallbackArgs {
     userUuid: string;
@@ -208,13 +219,16 @@ export class WS extends server {
         });
     }
 
-    broadcastToUsers(uuids: string[], data: Buffer | IStringified) {
+    broadcastToUsers(uuids: string[], data: OutMessage) {
         for (const uuid of uuids) {
             const connections = this.activeConnections.get(uuid);
             if (connections === undefined) continue;
 
             for (const { connection } of connections) {
-                connection.send(data, err => err && console.error(err));
+                connection.send(
+                    JSON.stringify(data),
+                    err => err && console.error(err)
+                );
             }
         }
     }
@@ -237,7 +251,7 @@ export class WS extends server {
 
     broadcastToRoomExclusively(
         roomId: string,
-        data: Buffer | IStringified,
+        data: OutMessage,
         blackList?: string[]
     ) {
         const members = this.rooms.get(roomId);
@@ -251,7 +265,7 @@ export class WS extends server {
         return this.broadcastToUsers(usersToNotify, data);
     }
 
-    broadcastToRoom(roomId: string, data: Buffer | IStringified) {
+    broadcastToRoom(roomId: string, data: OutMessage) {
         return this.broadcastToRoomExclusively(roomId, data);
     }
 }

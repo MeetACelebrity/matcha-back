@@ -76,16 +76,18 @@ async function app() {
                         payload: body.payload.message,
                     });
 
+                    if (message === null) break;
+
                     // Send the message to all users who have subscribed to this room
                     ws.broadcastToRoomExclusively(
                         body.payload.conversationId,
-                        JSON.stringify({
+                        {
                             type: OutMessageType.NEW_MESSAGE,
                             payload: {
                                 conversationId: body.payload.conversationId,
                                 ...message,
                             },
-                        }),
+                        },
                         [userUuid]
                     );
                     break;
