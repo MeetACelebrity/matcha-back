@@ -1,7 +1,7 @@
 import * as express from 'express';
 import { Context } from './../../app';
 
-import { proposals, search } from '../../models/match';
+import { proposals, search, getIntervals } from '../../models/match';
 
 export default function profileRoutes(): express.Router {
     const router = express.Router();
@@ -13,6 +13,26 @@ export default function profileRoutes(): express.Router {
         SORT_INPUT_ERROR = 'SORT_INPUT_ERROR',
         FILTER_INPUT_ERROR = 'FILTER_INPUT_ERROR',
     }
+
+    router.get('/interval', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            const result = await getIntervals({
+                db: res.locals.db,
+                uuid: user.uuid,
+            });
+            if (result === null) return null;
+            res.json({ ...result });
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    });
 
     router.post(
         '/proposals/:limit/:offset',

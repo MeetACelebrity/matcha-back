@@ -49,6 +49,64 @@ export interface CardUser {
     tags: Tags[];
     images: Image[];
 }
+
+export interface GetIntervals extends ModelArgs {
+    uuid: string;
+}
+
+export async function getIntervals({
+    db,
+    uuid,
+}: GetIntervals): Promise<{
+    minAge: number;
+    maxAge: number;
+    minScore: number;
+    maxScore: number;
+    minDistance: number;
+    maxDistance: number;
+    minCommonTags: number;
+    maxCommonTags: number;
+} | null> {
+    // GET min, max Score | min, max Age, | min, max Tags | min, max Distance beetwen us
+    const query = `
+        WITH
+            id_user
+        AS (
+            SELECT
+                *
+            FROM
+                users
+            WHERE
+                uuid = $1
+        )
+        SELECT
+            MIN(score) as "minScore",
+            MAX(score) as "maxScore",
+            MIN( EXTRACT(year FROM AGE(extended_profiles.birthday)) ) as "minAge",
+            MAX( EXTRACT(year FROM AGE(extended_profiles.birthday)) ) as "maxAge",
+            MIN(distance((SELECT id FROM id_user), users.id)) as "minDistance",
+            MAX(distance((SELECT id FROM id_user), users.id)) as "maxDistance",
+            MIN(common_tags((SELECT id FROM id_user), users.id)) as "minCommonTags",
+            MAX(common_tags((SELECT id FROM id_user), users.id)) as "maxCommonTags"
+        FROM
+            users
+        INNER JOIN
+            extended_profiles
+        ON
+            users.id = extended_profiles.user_id;
+        `;
+
+    try {
+        const {
+            rows: [intervals],
+        } = await db.query(query, [uuid]);
+        return { ...intervals };
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
 export async function proposals({
     db,
     uuid,
