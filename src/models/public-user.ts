@@ -1,12 +1,6 @@
-import { InternalUser, ExternalUser, srcToPath } from './user';
+import { InternalUser, ExternalUser, srcToPath, score } from './user';
 import { ModelArgs } from './index';
-import {
-    createConv,
-    deleteConv,
-    setNotif,
-    NotificationType,
-    generateNotifMessage,
-} from './chat';
+import { createConv, deleteConv, setNotif, NotificationType } from './chat';
 import { Database } from '../database';
 import { WS } from '../ws';
 
@@ -294,6 +288,14 @@ export async function userLike({
                 type: NotificationType.GOT_LIKE,
             });
         }
+
+        // re-evaluated the score
+        await score({
+            db,
+            actorUuid: uuidIn,
+            destUuid: uuidOut,
+            type: 'GOT_LIKE',
+        });
         return true;
     } catch (e) {
         console.error(e);
@@ -361,6 +363,12 @@ export async function userUnLike({
             });
             await deleteConv({ db, uuid1: uuidIn, uuid2: uuidOut });
         }
+        await score({
+            db,
+            actorUuid: uuidIn,
+            destUuid: uuidOut,
+            type: 'GOT_UNLIKE',
+        });
         return true;
     } catch (e) {
         console.error(e);
@@ -429,6 +437,13 @@ export async function userSee({
             sendUuid: uuidIn,
             type: NotificationType.GOT_VISIT,
         });
+
+        await score({
+            db,
+            actorUuid: uuidIn,
+            destUuid: uuidOut,
+            type: 'GOT_VISIT',
+        });
         return liked;
     } catch (e) {
         console.error(e);
@@ -476,6 +491,12 @@ export async function userBlock({
     try {
         const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
         if (rowCount === 0) return null;
+        await score({
+            db,
+            actorUuid: uuidIn,
+            destUuid: uuidOut,
+            type: 'GOT_BLOCK',
+        });
         return true;
     } catch (e) {
         console.error(e);
@@ -523,6 +544,12 @@ export async function userReport({
     try {
         const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
         if (rowCount === 0) return null;
+        await score({
+            db,
+            actorUuid: uuidIn,
+            destUuid: uuidOut,
+            type: 'GOT_REPORT',
+        });
         return true;
     } catch (e) {
         console.error(e);

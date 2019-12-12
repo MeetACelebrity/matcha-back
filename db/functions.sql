@@ -1181,6 +1181,10 @@ CREATE OR REPLACE FUNCTION has_same_tags("tags_array" text ARRAY[5], "user_id" i
                 users_tags.user_id = $2
         );
     -- GET TSVECTOR if input array
+        -- IF tags_array IS NULL THEN
+        --     RETURN 0;
+        -- END IF;
+        RAISE NOTICE 'tags_array: %',  tags_array;    
         FOR I IN array_lower(tags_array, 1)..array_upper(tags_array, 1) LOOP
             tags_array[i] := strip(tsvector(tags_array[i]));
         END LOOP;

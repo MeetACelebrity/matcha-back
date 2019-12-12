@@ -154,6 +154,12 @@ export interface Addresses {
     type: boolean;
 }
 
+export interface Score extends ModelArgs {
+    actorUuid: string;
+    destUuid: string;
+    type: string;
+}
+
 export interface Tags {
     uuid: string;
     name: string;
@@ -242,6 +248,43 @@ export function internalUserToExternalUser({
         addresses,
         tags,
     };
+}
+
+export async function score({
+    db,
+    actorUuid,
+    destUuid,
+    type,
+}: Score): Promise<true | null> {
+    const query = `
+        UPDATE
+            users
+        SET
+            score = score + (SELECT score FROM users WHERE uuid = $1) * $3
+        WHERE
+            users.uuid = $2
+        `;
+
+    const multiplicator = new Map([
+        ['GOT_LIKE', '10'],
+        ['GOT_VISIT', '5'],
+        ['GOT_UNLIKE', '-10'],
+        ['GOT_REPORT', '-15'],
+        ['GOT_BLOCK', '-20'],
+    ]);
+
+    try {
+        const { rowCount } = await db.query(query, [
+            actorUuid,
+            destUuid,
+            Number(multiplicator.get(type)),
+        ]);
+        if (rowCount === 0) return null;
+        return true;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
 }
 
 export async function createUser({
