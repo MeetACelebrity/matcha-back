@@ -174,6 +174,7 @@ export interface ExternalUser {
     createdAt: string;
     confirmed: boolean;
     birthday?: number;
+    age?: number;
     gender?: Gender;
     sexualOrientation?: SexualOrientation;
     biography?: string;
@@ -391,6 +392,7 @@ export async function getUserByUuid({
             users.online as "isOnline",
             users.last_seen as "lastSeen",
             extended_profiles.birthday,
+            EXTRACT(year FROM AGE(extended_profiles.birthday)) as "age",
             extended_profiles.gender,
             extended_profiles.sexual_orientation as "sexualOrientation",
             extended_profiles.biography
