@@ -181,6 +181,8 @@ export async function proposals({
                 commonTags,
                 score,
                 hasLikedMe,
+                sexualOrientation,
+                gender,
                 tags,
                 images,
             }) => ({
@@ -193,6 +195,8 @@ export async function proposals({
                 commonTags,
                 score,
                 hasLikedMe,
+                sexualOrientation,
+                gender,
                 tags:
                     tags !== null
                         ? tags.map((tag: string) => ({
@@ -301,6 +305,8 @@ export async function search({
                 commonTags,
                 score,
                 hasLikedMe,
+                sexualOrientation,
+                gender,
                 tags,
                 images,
             }) => ({
@@ -313,6 +319,8 @@ export async function search({
                 commonTags,
                 score,
                 hasLikedMe,
+                sexualOrientation,
+                gender,
                 tags:
                     tags !== null
                         ? tags.map((tag: string) => ({

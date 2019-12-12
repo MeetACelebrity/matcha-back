@@ -1057,6 +1057,8 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
             "commonTags" int,
             "score" int,
             "hasLikedMe" boolean,
+            "sexualOrientation" sexual_orientation,
+            "gender" gender,
             "tags" text[],
             "images" text[]
             ) AS $$
@@ -1086,6 +1088,8 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
             common_tags(me_info.id, users.id) as "commonTags",
             users.score,
             is_liker(me_info.id, users.id) as "hasLikedMe",
+            (SELECT sexual_orientation FROM extended_profiles WHERE user_id = users.id) as "sexualOrientation",
+            (SELECT extended_profiles.gender FROM extended_profiles WHERE user_id = users.id),
             ( 
                 SELECT 
                     array_agg("tags_list"::text) as "tags"
@@ -1199,6 +1203,8 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
             "commonTags" int,
             "score" int,
             "hasLikedMe" boolean,
+            "sexualOrientation" sexual_orientation,
+            "gender" gender,
             "tags" text[],
             "images" text[]
             ) AS $$
@@ -1252,6 +1258,8 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
             common_tags($4, users.id) as "commonTags",
             users.score,
             is_liker($4, users.id) as "hasLikedMe",
+            (SELECT sexual_orientation FROM extended_profiles WHERE user_id = users.id) as "sexualOrientation",
+            (SELECT extended_profiles.gender FROM extended_profiles WHERE user_id = users.id),
             ( 
                 SELECT 
                     array_agg("tags_list"::text) as "tags"
@@ -1423,6 +1431,8 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
             "commonTags" int,
             "score" int,
             "hasLikedMe" boolean,
+            "sexualOrientation" sexual_orientation,
+            "gender" gender,
             "tags" text[],
             "images" text[]
             ) AS $$
@@ -1487,6 +1497,8 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
                     "commonTags",
                     "score",
                     "hasLikedMe",
+                    "sexualOrientation",
+                    "gender",
                     "tags",
                     "images"
                 FROM
