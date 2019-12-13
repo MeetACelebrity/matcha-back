@@ -238,6 +238,7 @@ export async function userLike({
                 profile_pictures
             WHERE
                 user_id = (SELECT id FROM user_id)
+            LIMIT 1
         ),
             liked_id
         AS (
