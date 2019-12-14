@@ -240,6 +240,7 @@ export async function userLike({
                 profile_pictures
             WHERE
                 user_id = (SELECT id FROM user_id)
+            LIMIT 1
         ),
             liked_id
         AS (
@@ -271,25 +272,29 @@ export async function userLike({
         } = await db.query(query, [uuidIn, uuidOut]);
 
         if (result.is_matched === true) {
-            // send notif to uuidOut: "Matched ! : uuidIn liked back your profile"
             await createConv({ db, uuid1: uuidIn, uuid2: uuidOut });
-            await setNotif({
-                db,
-                ws,
-                destUuid: uuidOut,
-                sendUuid: uuidIn,
-                type: NotificationType.GOT_LIKE_MUTUAL,
-            });
-        } else {
-            // send notif to uuidOut: "uuidIn liked your profile"
-            await setNotif({
-                db,
-                ws,
-                destUuid: uuidOut,
-                sendUuid: uuidIn,
-                type: NotificationType.GOT_LIKE,
-            });
+
+            // Send to these users that a conversation has been created.
+            // It should contain the same data as for conversations initialisation.
+            //
+            // ws.broadcastToUsers()
         }
+
+        const notificationType =
+            result.is_matched === true
+                ? NotificationType.GOT_LIKE_MUTUAL
+                : NotificationType.GOT_LIKE;
+
+        // send notif to uuidOut: "Matched ! : uuidIn liked back your profile"
+        // OR
+        // send notif to uuidOut: "uuidIn liked your profile"
+        await setNotif({
+            db,
+            ws,
+            destUuid: uuidOut,
+            sendUuid: uuidIn,
+            type: notificationType,
+        });
 
         // re-evaluated the score
         await score({
