@@ -45,7 +45,7 @@ export interface CardUser {
     distance: number;
     commonTags: number;
     score: number;
-    hasLikedMe: boolean;
+    likeStatus: string;
     tags: Tags[];
     images: Image[];
 }
@@ -180,7 +180,7 @@ export async function proposals({
                 distance,
                 commonTags,
                 score,
-                hasLikedMe,
+                likeStatus,
                 sexualOrientation,
                 gender,
                 tags,
@@ -194,7 +194,7 @@ export async function proposals({
                 distance,
                 commonTags,
                 score,
-                hasLikedMe,
+                likeStatus,
                 sexualOrientation,
                 gender,
                 tags:
@@ -304,7 +304,7 @@ export async function search({
                 distance,
                 commonTags,
                 score,
-                hasLikedMe,
+                likeStatus,
                 sexualOrientation,
                 gender,
                 tags,
@@ -318,7 +318,7 @@ export async function search({
                 distance,
                 commonTags,
                 score,
-                hasLikedMe,
+                likeStatus,
                 sexualOrientation,
                 gender,
                 tags:

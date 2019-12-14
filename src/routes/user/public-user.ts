@@ -30,6 +30,7 @@ export default function publicUser(router: express.Router) {
             const searchUser = await getUserByUuid({
                 db: res.locals.db,
                 uuid: req.params.uuid,
+                meUuid: user.uuid,
             });
 
             const seeUser = await userSee({

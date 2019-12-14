@@ -1365,6 +1365,26 @@ CREATE OR REPLACE FUNCTION is_liker("me_id" int, "user_id" int) RETURNS boolean 
      END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION like_status("me_id" int, "user_id" int) RETURNS like_status AS $$
+    DECLARE
+        is_liked boolean;
+        is_liker boolean;
+    BEGIN
+        is_liked := is_liked(me_id, user_id);
+        is_liker := is_liker(me_id, user_id);
+
+        IF is_liked = TRUE AND is_liker = TRUE  THEN
+            RETURN 'MATCH';
+        ELSIF is_liked = TRUE AND is_liker = FALSE THEN
+            RETURN 'LIKED_IT';
+        ELSIF is_liked = FALSE AND is_liker = TRUE THEN
+            RETURN 'HAS_LIKED_US';
+        ELSE
+            RETURN 'VIRGIN';  
+        END IF;  
+    END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION is_matched("me_id" int, "user_id" int) RETURNS boolean AS $$
     BEGIN
     -- Check if match
@@ -1434,7 +1454,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
             "distance" float,
             "commonTags" int,
             "score" int,
-            "hasLikedMe" boolean,
+            "likeStatus" like_status,
             "sexualOrientation" sexual_orientation,
             "gender" gender,
             "tags" text[],
@@ -1446,6 +1466,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
         order_query text;
         final_query text;
         filter_query text;  
+        kind_query text;
     BEGIN
         -- Prepare order query
         IF me_order_by IS NOT NULL AND me_order IS NOT NULL 
@@ -1483,9 +1504,9 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
         END IF;
 
         IF kind = 'proposals' THEN
-            kind := 'proposals($1, $2, $3)';
+            kind_query := 'proposals($1, $2, $3)';
         ELSIF kind = 'search' AND me_data IS NOT NULL THEN
-            kind := 'search($1, $4, $2, $3, $5, $6, $7)';
+            kind_query := 'search($1, $4, $2, $3, $5, $6, $7)';
         END IF;
 
         RETURN QUERY 
@@ -1500,7 +1521,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
                     "distance",
                     "commonTags",
                     "score",
-                    "hasLikedMe",
+                    like_status( (SELECT id FROM users WHERE uuid = $1), (SELECT id FROM users WHERE uuid = %s.uuid)) as "likeStatus",
                     "sexualOrientation",
                     "gender",
                     "tags",
@@ -1508,7 +1529,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
                 FROM
                     %s
                 %s
-                ', kind, final_query)
+                ', kind, kind_query, final_query)
             USING me_uuid, me_limit, me_offset, me_data, lat, long, tags_array;
              END;
 $$ LANGUAGE plpgsql;

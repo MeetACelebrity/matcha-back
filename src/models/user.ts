@@ -24,6 +24,7 @@ export interface GetUserByEmailArgs extends ModelArgs {
 
 export interface GetUserByUuidArgs extends ModelArgs {
     uuid: string;
+    meUuid?: string;
 }
 
 export interface SetPasswordResetArgs extends ModelArgs {
@@ -184,6 +185,7 @@ export interface ExternalUser {
     gender?: Gender;
     sexualOrientation?: SexualOrientation;
     biography?: string;
+    likeStatus: string;
     location: Boolean;
     roaming: Roaming;
     images: Image[];
@@ -221,6 +223,7 @@ export function internalUserToExternalUser({
     biography,
     gender,
     sexualOrientation,
+    likeStatus,
     images,
     addresses,
     tags,
@@ -242,6 +245,7 @@ export function internalUserToExternalUser({
         biography,
         gender,
         sexualOrientation,
+        likeStatus,
         location,
         roaming,
         images,
@@ -418,6 +422,7 @@ export async function getUserByEmail({
 export async function getUserByUuid({
     db,
     uuid,
+    meUuid,
 }: GetUserByUuidArgs): Promise<InternalUser | null> {
     const basicInformationsQuery = `
         SELECT
@@ -434,6 +439,7 @@ export async function getUserByUuid({
             users.roaming,
             users.online as "isOnline",
             users.last_seen as "lastSeen",
+            like_status( (SELECT id FROM users WHERE uuid = $2),users.id) as "likeStatus",
             extended_profiles.birthday,
             EXTRACT(year FROM AGE(extended_profiles.birthday)) as "age",
             extended_profiles.gender,
@@ -520,20 +526,19 @@ export async function getUserByUuid({
             users_tags.user_id = (SELECT id FROM id_user);
         `;
     try {
+        const uuid2 = meUuid ? meUuid : uuid;
+        const {
+            rows: [user],
+        } = await db.query(basicInformationsQuery, [uuid, uuid2]);
+
         const [
-            {
-                rows: [user],
-            },
             { rows: images },
             { rows: addresses },
             { rows: tags },
         ] = await Promise.all(
-            [
-                basicInformationsQuery,
-                profilePicturesQuery,
-                addressesQuery,
-                tagsQuery,
-            ].map(query => db.query(query, [uuid]))
+            [profilePicturesQuery, addressesQuery, tagsQuery].map(query =>
+                db.query(query, [uuid])
+            )
         );
         if (!user || !Array.isArray(images)) return null;
 

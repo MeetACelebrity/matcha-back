@@ -14,6 +14,13 @@ CREATE TYPE "token_type" AS ENUM (
   'PASSWORD_RESET'
 );
 
+CREATE TYPE "like_status" AS ENUM (
+  'VIRGIN',
+  'HAS_LIKED_US',  
+  'LIKED_IT',
+  'MATCH'
+);
+
 CREATE TYPE "notification_type" AS ENUM (
   'GOT_LIKE',
   'GOT_VISIT',
