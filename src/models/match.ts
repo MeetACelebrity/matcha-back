@@ -330,8 +330,14 @@ export async function search({
                 tags:
                     tags !== null
                         ? tags.map((tag: string) => ({
-                              uuid: tag.slice(1, -1).split(',')[0],
-                              text: tag.slice(1, -1).split(',')[1],
+                              uuid: tag
+                                  .slice(1, -1)
+                                  .split(',')[0]
+                                  .replace(/['"]+/g, ''),
+                              text: tag
+                                  .slice(1, -1)
+                                  .split(',')[1]
+                                  .replace(/['"]+/g, ''),
                           }))
                         : null,
                 images:
