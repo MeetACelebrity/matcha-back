@@ -2,6 +2,7 @@ import { server, request, IMessage, connection, IStringified } from 'websocket';
 import { Server } from 'http';
 
 import { Validator } from './utils/validator';
+import { ConvsFormat } from './models/chat';
 
 interface OpenConnexion {
     connection: connection;
@@ -17,6 +18,7 @@ export enum OutMessageType {
     CONVERSATIONS = 'CONVERSATIONS',
     NEW_MESSAGE = 'NEW_MESSAGE',
     NEW_NOTIFICATION = 'NEW_NOTIFICATION',
+    NEW_CONVERSATION = 'NEW_CONVERSATION',
 }
 
 export interface InMessageInit {
@@ -53,7 +55,15 @@ export interface OutMessageNewNotification {
     };
 }
 
-export type OutMessage = OutMessageNewMessage | OutMessageNewNotification;
+export interface OutMessageNewConversation {
+    type: OutMessageType.NEW_CONVERSATION;
+    payload: ConvsFormat;
+}
+
+export type OutMessage =
+    | OutMessageNewMessage
+    | OutMessageNewNotification
+    | OutMessageNewConversation;
 
 export interface OnMessageCallbackArgs {
     userUuid: string;
@@ -243,10 +253,7 @@ export class WS extends server {
         const members = this.rooms.get(roomId);
         if (members === undefined) return;
 
-        this.rooms.set(
-            roomId,
-            members.filter(uuid => uuid !== userId)
-        );
+        this.rooms.set(roomId, members.filter(uuid => uuid !== userId));
     }
 
     broadcastToRoomExclusively(
