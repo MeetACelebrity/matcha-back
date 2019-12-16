@@ -373,7 +373,7 @@ CREATE OR REPLACE FUNCTION get_tags("user_id_tags" int) RETURNS TABLE ("tags_lis
         SELECT
             ARRAY [
                 tags.uuid::text,
-                tags.name::text
+                tags.name
             ] as "tags_list"
         FROM
             tags

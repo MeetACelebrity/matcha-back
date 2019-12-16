@@ -58,7 +58,6 @@ export interface SetNotif extends ModelArgs {
 
 export interface Notif extends ModelArgs {
     uuid: string;
-    seen: boolean;
 }
 
 export async function createConv({
@@ -347,7 +346,7 @@ export async function seenNotif({ db, uuid }: Notif): Promise<true | null> {
     }
 }
 
-export async function getNotifs({ db, uuid, seen }: Notif) {
+export async function getNotifs({ db, uuid }: Notif) {
     const query = `
         WITH
             id_user
@@ -367,15 +366,11 @@ export async function getNotifs({ db, uuid, seen }: Notif) {
         FROM
             notifications
         WHERE
-            notified_user_id = ( SELECT id FROM id_user)
-        AND
-            seen = $2; 
+            notified_user_id = ( SELECT id FROM id_user) 
             `;
 
     try {
-        if (typeof seen !== 'boolean') return null;
-
-        const { rows: notifications } = await db.query(query, [uuid, seen]);
+        const { rows: notifications } = await db.query(query, [uuid]);
         return notifications.map(({ uuid, type, username, seen }) => ({
             uuid,
             seen,

@@ -55,7 +55,7 @@ export default function publicUser(router: express.Router) {
         }
     });
 
-    router.get('/notif/:seen', async (req, res) => {
+    router.get('/notif/get', async (req, res) => {
         try {
             const { user }: Context = res.locals;
 
@@ -66,7 +66,6 @@ export default function publicUser(router: express.Router) {
             const result = await getNotifs({
                 db: res.locals.db,
                 uuid: user.uuid,
-                seen: Number(req.params.seen) === 1 ? true : false,
             });
             if (result === null) {
                 res.sendStatus(404);
