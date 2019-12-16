@@ -68,7 +68,7 @@ class User {
         this.roamming = roamingChoices[faker.random.number({ min: 0, max: 2 })];
 
         // generate addresses
-        (this.address = faker.random.arrayElement([
+        this.address = faker.random.arrayElement([
             { lat: '43.1167', lon: '5.9333' }, // Toulon
             { lat: '49.4431 ', lon: '1.0993' }, // Rouen
             { lat: '45.7676  ', lon: '4.8345' }, // Lyon 1er
@@ -83,15 +83,15 @@ class User {
             { lat: '45.750000', lon: '4.850000' }, // Lyon 7e
             { lat: '43.2167 ', lon: '5.35' }, // Marseille 8eme
             { lat: '47.9033 ', lon: '3.60167' }, // Seignelay
-        ])),
-            // generate extended profiled
-            (this.birthday = new Date(
-                Date.UTC(
-                    faker.random.number({ min: 1900, max: 2001 }),
-                    faker.random.number({ min: 1, max: 12 }),
-                    faker.random.number({ min: 1, max: 20 })
-                )
-            ));
+        ]);
+        // generate extended profiled
+        this.birthday = new Date(
+            Date.UTC(
+                faker.random.number({ min: 1900, max: 2001 }),
+                faker.random.number({ min: 1, max: 12 }),
+                faker.random.number({ min: 1, max: 20 })
+            )
+        );
         this.gender = genderChoices[faker.random.number({ min: 0, max: 1 })];
         this.sexualOrientation =
             sexualOrientationChoices[faker.random.number({ min: 0, max: 2 })];
@@ -193,7 +193,7 @@ class User {
     try {
         await db.query('BEGIN');
 
-        const USERS_COUNT = 10;
+        const USERS_COUNT = 100;
 
         for (let index = 0; index < USERS_COUNT; index += 1) {
             const user = new User();
