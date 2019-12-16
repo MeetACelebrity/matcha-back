@@ -13,6 +13,7 @@ import {
     userNotInterested,
 } from '../../models/public-user';
 import { getUserByUuid } from '../../models/user';
+import { getNotifs } from '../../models/chat';
 
 const enum PublicUserStatusCode {
     DONE = 'DONE',
@@ -51,6 +52,30 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+        }
+    });
+
+    router.get('/notif/:seen', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            const result = await getNotifs({
+                db: res.locals.db,
+                uuid: user.uuid,
+                seen: Number(req.params.seen) === 1 ? true : false,
+            });
+            if (result === null) {
+                res.sendStatus(404);
+                return;
+            }
+            res.json(result);
+        } catch (e) {
+            console.error(e);
+            return null;
         }
     });
 

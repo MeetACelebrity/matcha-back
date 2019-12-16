@@ -4,6 +4,12 @@ import { srcToPath } from './user';
 import { WS, OutMessageType } from '../ws';
 
 export interface CreateConv extends ModelArgs {
+    ws: WS;
+    uuid1: string;
+    uuid2: string;
+}
+
+export interface DeleteConv extends ModelArgs {
     uuid1: string;
     uuid2: string;
 }
@@ -57,16 +63,33 @@ export interface Notif extends ModelArgs {
 
 export async function createConv({
     db,
+    ws,
     uuid1,
     uuid2,
 }: CreateConv): Promise<boolean | null> {
     try {
-        const query = `SELECT create_conv($1, $2, $3)`;
+        const query = `SELECT 
+                            create_conv($1, $2, $3), 
+                        (SELECT username FROM users WHERE uuid = $1) as "username1",
+                        (SELECT username FROM users WHERE uuid = $2) as "username2"`;
         const uuid3 = uuid();
 
         const {
             rows: [result],
         } = await db.query(query, [uuid1, uuid2, uuid3]);
+        // broadcast conv to user:
+
+        ws.broadcastToUsers([uuid1, uuid2], {
+            type: OutMessageType.NEW_CONVERSATION,
+            payload: {
+                uuid: uuid3,
+                users: [
+                    { uuid: uuid1, username: result.username1 },
+                    { uuid: uuid2, username: result.username2 },
+                ],
+                messages: [],
+            },
+        });
         return result.create_conv;
     } catch (e) {
         console.error(e);
@@ -78,7 +101,7 @@ export async function deleteConv({
     db,
     uuid1,
     uuid2,
-}: CreateConv): Promise<boolean | null> {
+}: DeleteConv): Promise<boolean | null> {
     try {
         const query = `SELECT delete_conv($1, $2)`;
 
@@ -353,10 +376,10 @@ export async function getNotifs({ db, uuid, seen }: Notif) {
         if (typeof seen !== 'boolean') return null;
 
         const { rows: notifications } = await db.query(query, [uuid, seen]);
-
         return notifications.map(({ uuid, type, username, seen }) => ({
             uuid,
             seen,
+            type,
             message: generateNotifMessage({ username, type }),
         }));
     } catch (e) {

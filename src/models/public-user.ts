@@ -272,12 +272,7 @@ export async function userLike({
         } = await db.query(query, [uuidIn, uuidOut]);
 
         if (result.is_matched === true) {
-            await createConv({ db, uuid1: uuidIn, uuid2: uuidOut });
-
-            // Send to these users that a conversation has been created.
-            // It should contain the same data as for conversations initialisation.
-            //
-            // ws.broadcastToUsers()
+            await createConv({ db, ws, uuid1: uuidIn, uuid2: uuidOut });
         }
 
         const notificationType =
