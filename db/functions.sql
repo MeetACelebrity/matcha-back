@@ -1046,7 +1046,7 @@ CREATE OR REPLACE FUNCTION common_tags("me_id" int, "user_id" int) RETURNS int A
     END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid,
             "username" text,
@@ -1113,11 +1113,7 @@ CREATE OR REPLACE FUNCTION proposals("me_uuid" uuid, "limit" int, "offset" int) 
         ORDER BY
              distance,
             "commonTags" DESC,
-            users.score DESC
-        LIMIT 
-            $2
-        OFFSET
-            $3;
+            users.score DESC;
     END;
 $$ LANGUAGE plpgsql;
 
@@ -1196,7 +1192,7 @@ CREATE OR REPLACE FUNCTION has_same_tags("tags_array" text ARRAY[5], "user_id" i
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int, "me_offset" int, "lat" float, "long" float, "tags_array" text ARRAY[5]) RETURNS TABLE (
+CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "lat" float, "long" float, "tags_array" text ARRAY[5]) RETURNS TABLE (
             "size" bigint,
             "uuid" uuid,
             "username" text,
@@ -1229,14 +1225,14 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
 
     -- Generate location query
     IF lat IS NOT NULL AND long IS NOT NULL THEN
-        location_query := 'AND is_arround($5, $6, users.id) = TRUE';
+        location_query := 'AND is_arround($3, $4, users.id) = TRUE';
     ELSE
         location_query := '';
     END IF;
 
     -- Generate tags query
         IF tags_array IS NOT NULL THEN
-            tags_query := 'AND has_same_tags($7, users.id) = TRUE';
+            tags_query := 'AND has_same_tags($5, users.id) = TRUE';
         ELSE
             tags_query := '';
         END IF;
@@ -1258,10 +1254,10 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
                 WHERE
                    extended_profiles.user_id = users.id 
             )::integer  as "age",
-            distance($4, users.id) as "distance",
-            common_tags($4, users.id) as "commonTags",
+            distance($2, users.id) as "distance",
+            common_tags($2, users.id) as "commonTags",
             users.score,
-            is_liker($4, users.id) as "hasLikedMe",
+            is_liker($2, users.id) as "hasLikedMe",
             (SELECT sexual_orientation FROM extended_profiles WHERE user_id = users.id) as "sexualOrientation",
             (SELECT extended_profiles.gender FROM extended_profiles WHERE user_id = users.id),
             ( 
@@ -1279,16 +1275,16 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
         FROM
             users
         WHERE
-            users.id != $4
+            users.id != $2
         AND
             users.confirmed = TRUE
         AND
         (
-                users.username LIKE $1 || %L
+                users.username ILIKE $1 || %L
             OR
-                users.given_name LIKE $1 || %L
+                users.given_name ILIKE $1 || %L
             OR
-                users.family_name LIKE $1 || %L
+                users.family_name ILIKE $1 || %L
         )
         %s
         %s
@@ -1296,11 +1292,8 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "me_limit" int
             distance,
             "commonTags" DESC,
             users.score DESC
-        LIMIT 
-            $2
-        OFFSET
-            $3', '%', '%', '%', location_query, tags_query)
-        USING me_data, me_limit, me_offset, me_info.id, lat, long, tags_array;
+        ', '%', '%', '%', location_query, tags_query)
+        USING me_data, me_info.id, lat, long, tags_array;
     END;
 $$ LANGUAGE plpgsql;
 
@@ -1504,9 +1497,9 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
         END IF;
 
         IF kind = 'proposals' THEN
-            kind_query := 'proposals($1, $2, $3)';
+            kind_query := 'proposals($1)';
         ELSIF kind = 'search' AND me_data IS NOT NULL THEN
-            kind_query := 'search($1, $4, $2, $3, $5, $6, $7)';
+            kind_query := 'search($1, $4, $5, $6, $7)';
         END IF;
 
         RETURN QUERY 
@@ -1529,6 +1522,10 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
                 FROM
                     %s
                 %s
+                LIMIT
+                    $2
+                OFFSET
+                    $3
                 ', kind, kind_query, final_query)
             USING me_uuid, me_limit, me_offset, me_data, lat, long, tags_array;
              END;
