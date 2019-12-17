@@ -5,7 +5,8 @@ import profileRoutes from './profile/profile';
 import publicUserRoutes from './user/user';
 import matchingRoutes from './match/match';
 import { internalUserToExternalUser, getUserByEmail } from '../models/user';
-import { getNotifs } from '../models/chat';
+import { Context } from '../app';
+// import { getNotifs } from '../models/chat';
 
 export default function routes(server: Express) {
     server.use('/auth', authRoutes());
@@ -21,11 +22,23 @@ export default function routes(server: Express) {
         }
         res.json(internalUserToExternalUser(res.locals.user));
     });
-    server.get('/test', async (req, res) => {
-        const result = await getNotifs({
-            db: res.locals.db,
-            uuid: req.body.uuid,
-        });
-        res.json({ result });
+
+    server.get('/disconnect', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+            if (req.session !== undefined) {
+                req.session.destroy((err: any) => err);
+                res.json({ result: 'DONE' });
+                return;
+            }
+            res.json({ result: 'ERROR' });
+        } catch (e) {
+            console.error(e);
+        }
     });
 }
