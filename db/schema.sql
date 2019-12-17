@@ -162,7 +162,8 @@ CREATE TABLE "notifications" (
   "type" notification_type NOT NULL,
   "notified_user_id" int NOT NULL,
   "notifier_user_id" int NOT NULL,
-  "seen" boolean NOT NULL DEFAULT FALSE
+  "seen" boolean NOT NULL DEFAULT FALSE,
+  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "tags" (

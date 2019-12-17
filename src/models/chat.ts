@@ -362,7 +362,8 @@ export async function getNotifs({ db, uuid }: Notif) {
             uuid,
             type,
             (SELECT username FROM users WHERE id = notifications.notifier_user_id),
-            seen
+            seen,
+            created_at as "createdAt"
         FROM
             notifications
         WHERE
@@ -371,12 +372,15 @@ export async function getNotifs({ db, uuid }: Notif) {
 
     try {
         const { rows: notifications } = await db.query(query, [uuid]);
-        return notifications.map(({ uuid, type, username, seen }) => ({
-            uuid,
-            seen,
-            type,
-            message: generateNotifMessage({ username, type }),
-        }));
+        return notifications.map(
+            ({ uuid, type, username, seen, createdAt }) => ({
+                uuid,
+                seen,
+                type,
+                message: generateNotifMessage({ username, type }),
+                createdAt: Date.parse(createdAt),
+            })
+        );
     } catch (e) {
         console.error(e);
         return null;
