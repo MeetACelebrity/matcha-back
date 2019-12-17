@@ -457,6 +457,7 @@ export async function getUserByUuid({
             users.email,
             users.password,
             users.created_at as "createdAt",
+            users.score,
             users.confirmed,
             users.location,
             users.roaming,
