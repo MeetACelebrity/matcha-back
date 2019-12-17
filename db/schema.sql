@@ -51,6 +51,7 @@ CREATE TABLE "users" (
   "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
   "last_seen" timestamp ,
   "online" boolean NOT NULL DEFAULT FALSE,
+  "seen_message" bool NOT NULL DEFAULT false,
   "extended_profile" int,
   "confirmed" bool NOT NULL DEFAULT false,
   "roaming" roaming_preferences NOT NULL DEFAULT 'NOT_SET',

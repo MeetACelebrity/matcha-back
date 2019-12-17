@@ -171,7 +171,7 @@ CREATE OR REPLACE FUNCTION delete_picture(uuid1 uuid, uuid2 uuid) RETURNS text A
         FROM
             users
         WHERE
-            uuid=$1;
+            uuid = $1;
 
     -- Get id of image in current_images
         SELECT
@@ -185,7 +185,7 @@ CREATE OR REPLACE FUNCTION delete_picture(uuid1 uuid, uuid2 uuid) RETURNS text A
         ON
             profile_pictures.image_id=images.id
         WHERE
-            images.uuid=$2
+            images.uuid= $2
         AND
             profile_pictures.user_id=id_user.id
         AND
