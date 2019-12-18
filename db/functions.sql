@@ -1161,33 +1161,32 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION has_same_tags("tags_array" text ARRAY[5], "user_id" int) RETURNS boolean AS $$
     DECLARE
-        user_array text ARRAY[5];
+        tag     TEXT;
     BEGIN
-    -- GET AN ARRAY of tsvector tags of users
-        user_array := ARRAY(
-            SELECT
-                strip(tsvector)
+        -- If the `tags_array` parameter is empty, return false
+        IF CARDINALITY(tags_array) = 0 THEN
+            RETURN FALSE;
+        END IF;
+
+        FOREACH tag IN ARRAY tags_array LOOP
+            PERFORM
+                tags.id
             FROM
-                tags
-            INNER JOIN
                 users_tags
+            INNER JOIN
+                tags
             ON
                 users_tags.tag_id = tags.id
             WHERE
                 users_tags.user_id = $2
-        );
-    -- GET TSVECTOR if input array
-        -- IF tags_array IS NULL THEN
-        --     RETURN 0;
-        -- END IF;
-        RAISE NOTICE 'tags_array: %',  tags_array;    
-        FOR I IN array_lower(tags_array, 1)..array_upper(tags_array, 1) LOOP
-            tags_array[i] := strip(tsvector(tags_array[i]));
+                    AND
+                tags.tsvector @@ PLAINTO_TSQUERY('english', tag);
+
+            IF NOT FOUND THEN
+                RETURN FALSE;
+            END IF;
         END LOOP;
-    RAISE NOTICE 'user_array: %',  user_array;   
-    RAISE NOTICE 'tags_array: %',  tags_array;                       
-    -- is user array @> input array?
-        RETURN user_array @> tags_array;
+        RETURN TRUE;
     END;
 $$ LANGUAGE plpgsql;
 
