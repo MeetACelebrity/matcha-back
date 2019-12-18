@@ -147,7 +147,10 @@ export async function proposals({
             return null;
         }
 
-        const { rows: users } = await db.query(query, [
+        const {
+            rows: users,
+            rows: [{ total_entries_count } = { total_entries_count: 0 }],
+        } = await db.query(query, [
             uuid,
             limit,
             offset,
@@ -165,10 +168,7 @@ export async function proposals({
         ]);
 
         // check result and well format output(get the size, remove it from data), the send it
-        const hasMore =
-            Array.isArray(users) &&
-            users[0] !== undefined &&
-            users[0].size - offset - limit > 0;
+        const hasMore = total_entries_count > offset + limit;
 
         const data = users.map(
             ({
@@ -273,7 +273,10 @@ export async function search({
             return null;
         }
 
-        const { rows: users } = await db.query(query, [
+        const {
+            rows: users,
+            rows: [{ total_entries_count } = { total_entries_count: 0 }],
+        } = await db.query(query, [
             uuid,
             limit,
             offset,
@@ -295,10 +298,7 @@ export async function search({
         ]);
 
         // check result and well format output(get the size, remove it from data), the send it
-        const hasMore =
-            Array.isArray(users) &&
-            users[0] !== undefined &&
-            users[0].size - offset - limit > 0;
+        const hasMore = total_entries_count > offset + limit;
 
         const datas = users.map(
             ({

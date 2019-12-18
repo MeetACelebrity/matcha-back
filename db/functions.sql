@@ -1438,6 +1438,7 @@ $$ LANGUAGE plpgsql;
 
 -- Format
 CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" int, "me_order_by" text, "me_order" text, "filter_var" int ARRAY[8], "kind" text, "me_data" text, "lat" float, "long" float, "tags_array" text ARRAY[5]) RETURNS TABLE (
+            "total_entries_count" bigint,
             "size" bigint,
             "uuid" uuid, 
             "username" text,
@@ -1505,6 +1506,7 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
         RETURN QUERY 
             EXECUTE format('
                 SELECT
+                    COUNT(*) OVER() AS "total_entries_count",
                     "size",
                     "uuid", 
                     "username",
