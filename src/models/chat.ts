@@ -313,12 +313,14 @@ export async function setNotif({
         ws.broadcastToUsers([destUuid], {
             type: OutMessageType.NEW_NOTIFICATION,
             payload: {
+                type,
                 uuid: notifUuid,
                 message: generateNotifMessage({
                     type,
                     username: user.username,
                 }),
                 seen: false,
+                createdAt: +new Date(),
             },
         });
         return true;

@@ -2,7 +2,7 @@ import { server, request, IMessage, connection, IStringified } from 'websocket';
 import { Server } from 'http';
 
 import { Validator } from './utils/validator';
-import { ConvsFormat } from './models/chat';
+import { ConvsFormat, NotificationType } from './models/chat';
 
 interface OpenConnexion {
     connection: connection;
@@ -50,8 +50,10 @@ export interface OutMessageNewNotification {
     type: OutMessageType.NEW_NOTIFICATION;
     payload: {
         uuid: string;
+        type: NotificationType;
         message: string;
         seen: boolean;
+        createdAt: number;
     };
 }
 
