@@ -4,6 +4,7 @@
     "description": "",
     "main": "src/app.ts",
     "dependencies": {
+        "@artisans-fiables/template-compiler": "^0.2.5",
         "@types/cors": "^2.8.6",
         "@types/express-fileupload": "^1.1.0",
         "@types/express-session": "^1.15.16",

@@ -28,7 +28,7 @@ export default class Email {
             text,
             subject,
             html: htmlGeneratedHeml,
-            from: '"COUCOU" <test@pornhub.fr>',
+            from: '"Meet a Celebrity" <contact@meetacelebrity.com>',
         });
     }
 }

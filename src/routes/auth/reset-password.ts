@@ -1,4 +1,5 @@
 import * as express from 'express';
+import heml from 'heml';
 
 import { FRONT_ENDPOINT } from '../../constants';
 import {
@@ -7,6 +8,7 @@ import {
     resetingPassword,
     internalUserToExternalUser,
 } from '../../models/user';
+import { Context } from '../../app';
 
 const enum ResetPasswordStatusCode {
     DONE = 'DONE',
@@ -21,9 +23,12 @@ export default function setupResetPassword(router: express.Router) {
 
     router.post('/reset-password/asking', async (req, res) => {
         try {
+            const { db, email, templates }: Context = res.locals;
+            const userEmail = req.body.email;
+
             const user = await getUserByEmail({
-                db: res.locals.db,
-                email: req.body.email,
+                db,
+                email: userEmail,
             });
 
             if (user === null) {
@@ -41,7 +46,7 @@ export default function setupResetPassword(router: express.Router) {
 
             // write token and uuid
             const result = await setPasswordReset({
-                db: res.locals.db,
+                db,
                 id: user.id,
             });
             if (result === null) {
@@ -49,10 +54,29 @@ export default function setupResetPassword(router: express.Router) {
                 res.json({ statusCode: ResetPasswordStatusCode.UNKNOWN_ERROR });
                 return;
             }
-            // send link
-            console.log(
-                `${FRONT_ENDPOINT}/reset-password/password/${user.uuid}/${result}`
+
+            const template = templates.get('PasswordReset');
+            if (template === undefined) {
+                throw new Error('the template function is undefined');
+            }
+
+            const link = `${FRONT_ENDPOINT}/reset-password/password/${user.uuid}/${result}`;
+
+            const { html } = await heml(
+                template({
+                    reset_password_link: link,
+                })
             );
+
+            console.log('generated html =', html);
+
+            await email.sendMail({
+                html,
+                subject: 'Meet a Celebrity - Password Reset',
+                text: link,
+                to: userEmail,
+            });
+
             res.status(200);
             res.json({ statusCode: ResetPasswordStatusCode.DONE });
             return;

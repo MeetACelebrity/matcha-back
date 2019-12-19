@@ -5,6 +5,8 @@ import cors from 'cors';
 import fileUpload from 'express-fileupload';
 import { createServer } from 'http';
 import createMemoryStore from 'memorystore';
+import { compile, TemplatesMap } from '@artisans-fiables/template-compiler';
+import { join } from 'path';
 
 import { FRONT_ENDPOINT } from './constants';
 import routes from './routes';
@@ -14,6 +16,7 @@ import { InternalUser, getUserByUuid } from './models/user';
 import { WS, InMessageType, OutMessageType } from './ws';
 import { getConvs, createMessage } from './models/chat';
 import { onlineUser } from './models/public-user';
+import Email from './email';
 
 export interface Context {
     db: Database;
@@ -21,6 +24,8 @@ export interface Context {
     ws: WS;
     user: InternalUser | null;
     isAuthenticated: boolean;
+    templates: TemplatesMap;
+    email: Email;
 }
 
 interface User {
@@ -33,6 +38,9 @@ async function app() {
 
     const db = new Database();
     const cloud = new Cloud();
+
+    const email = new Email();
+    const templates = await compile(join(__dirname, '../templates'));
 
     const store = new (createMemoryStore(session))({
         checkPeriod: 86400000, // prune expired entries every 24h
@@ -143,10 +151,12 @@ async function app() {
             console.log('gotten user =', user);
 
             const context: Context = {
+                templates,
                 db,
                 cloud,
                 ws,
                 user,
+                email,
                 isAuthenticated: req.session!.user !== null,
             };
 

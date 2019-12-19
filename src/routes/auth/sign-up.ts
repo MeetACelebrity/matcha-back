@@ -1,7 +1,10 @@
 import * as express from 'express';
+import heml from 'heml';
+
 import { Validator, ValidatorObject } from '../../utils/validator';
 import { createUser } from '../../models/user';
 import { API_ENDPOINT } from '../../constants';
+import { Context } from '../../app';
 
 const enum SignUpStatusCode {
     DONE = 'DONE',
@@ -60,37 +63,48 @@ function signUpRouteValidation(req: express.Request): SignUpStatusCode {
 export default function signUpMiddleware(router: express.Router) {
     router.post('/sign-up', async (req, res) => {
         try {
+            const { db, email, templates }: Context = res.locals;
+
             const statusCode = signUpRouteValidation(req);
 
             if (statusCode !== SignUpStatusCode.DONE) {
                 res.status(400);
-
                 res.json({
                     statusCode,
                 });
-
                 return;
             }
 
-            console.log('request body', req.body);
-
-            const result = await createUser({ db: res.locals.db, ...req.body });
-
-            console.log('result =', result);
+            const result = await createUser({ db, ...req.body });
 
             if (result === null) {
                 res.status(500);
-
                 res.json({
                     statusCode: SignUpStatusCode.FORBIDDEN_INFORMATION,
                 });
-
                 return;
             }
-            const urlConfirmation = `${API_ENDPOINT}/auth/confirmation/${result.uuid}/${result.token}`;
 
-            // send email here
-            console.log(urlConfirmation);
+            const template = templates.get('Welcome');
+            if (template === undefined) {
+                throw new Error('the template function is undefined');
+            }
+
+            const validationUrl = `${API_ENDPOINT}/auth/confirmation/${result.uuid}/${result.token}`;
+
+            const { html } = await heml(
+                template({
+                    username: req.body.username,
+                    signup_url: validationUrl,
+                })
+            );
+
+            await email.sendMail({
+                html,
+                subject: 'Meet a Celebrity - Password Reset',
+                text: validationUrl,
+                to: req.body.email,
+            });
 
             res.json({
                 statusCode: SignUpStatusCode.DONE,
