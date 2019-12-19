@@ -260,6 +260,12 @@ export class WS extends server {
         this.rooms.set(roomId, members.filter(uuid => uuid !== userId));
     }
 
+    subscribeUsersToRoom(roomId: string, usersId: string[]) {
+        for (const userId of usersId) {
+            this.subscribeToRoom(roomId, userId);
+        }
+    }
+
     broadcastToRoomExclusively(
         roomId: string,
         data: OutMessage,

@@ -67,22 +67,28 @@ export async function createConv({
     uuid1,
     uuid2,
 }: CreateConv): Promise<boolean | null> {
+    const query = `
+        SELECT 
+            create_conv($1, $2, $3), 
+            (SELECT username FROM users WHERE uuid = $1) as "username1",
+            (SELECT username FROM users WHERE uuid = $2) as "username2"
+    `;
+
     try {
-        const query = `SELECT 
-                            create_conv($1, $2, $3), 
-                        (SELECT username FROM users WHERE uuid = $1) as "username1",
-                        (SELECT username FROM users WHERE uuid = $2) as "username2"`;
-        const uuid3 = uuid();
+        const conversationUuid = uuid();
 
         const {
             rows: [result],
-        } = await db.query(query, [uuid1, uuid2, uuid3]);
-        // broadcast conv to user:
+        } = await db.query(query, [uuid1, uuid2, conversationUuid]);
 
-        ws.broadcastToUsers([uuid1, uuid2], {
+        const usersId = [uuid1, uuid2];
+
+        ws.subscribeUsersToRoom(conversationUuid, usersId);
+
+        ws.broadcastToUsers(usersId, {
             type: OutMessageType.NEW_CONVERSATION,
             payload: {
-                uuid: uuid3,
+                uuid: conversationUuid,
                 users: [
                     { uuid: uuid1, username: result.username1 },
                     { uuid: uuid2, username: result.username2 },
