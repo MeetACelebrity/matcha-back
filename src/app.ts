@@ -13,6 +13,7 @@ import { Cloud } from './cloud';
 import { InternalUser, getUserByUuid } from './models/user';
 import { WS, InMessageType, OutMessageType } from './ws';
 import { getConvs, createMessage } from './models/chat';
+import { onlineUser } from './models/public-user';
 
 export interface Context {
     db: Database;
@@ -43,10 +44,17 @@ async function app() {
         async ({ connection, body, userUuid }) => {
             switch (body.type) {
                 case InMessageType.INIT: {
-                    const conversations = await getConvs({
-                        db,
-                        uuid: userUuid,
-                    });
+                    const [conversations] = await Promise.all([
+                        getConvs({
+                            db,
+                            uuid: userUuid,
+                        }),
+                        onlineUser({
+                            db,
+                            uuid: userUuid,
+                            value: true,
+                        }),
+                    ]);
                     if (conversations === null) {
                         // Send error to client
                         return;
@@ -96,8 +104,12 @@ async function app() {
                     return;
             }
         },
-        () => {
-            console.log('bye');
+        async ({ userUuid }) => {
+            await onlineUser({
+                db,
+                uuid: userUuid,
+                value: false,
+            });
         }
     );
 

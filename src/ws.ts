@@ -75,6 +75,7 @@ export interface OnMessageCallbackArgs {
 }
 
 export interface OnCloseCallbackArgs {
+    userUuid: string;
     statusCode: number;
     description: string;
     request: request;
@@ -220,6 +221,7 @@ export class WS extends server {
                             connection,
                             statusCode,
                             description,
+                            userUuid: uuid,
                         });
                     } catch (e) {
                         console.error('Error on close handler', e);
