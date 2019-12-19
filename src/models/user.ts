@@ -730,7 +730,7 @@ export async function resetingPassword({
                 FROM
                     users_tokens
                 WHERE
-                    birthday(now(), users_tokens.created_at) < ('15 min'::interval)
+                    AGE(CURRENT_TIMESTAMP, users_tokens.created_at) < ('15 min'::interval)
                 AND
                     users_tokens.confirmed='t'
             )
