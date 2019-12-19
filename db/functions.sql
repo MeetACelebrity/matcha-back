@@ -1531,4 +1531,71 @@ CREATE OR REPLACE FUNCTION formated("me_uuid" uuid, "me_limit" int, "me_offset" 
             USING me_uuid, me_limit, me_offset, me_data, lat, long, tags_array;
              END;
 $$ LANGUAGE plpgsql;
-   
+
+CREATE OR REPLACE FUNCTION block_user(blocker UUID, blocked UUID) RETURNS BOOLEAN AS $$
+DECLARE
+    conversations_id    INTEGER[];
+BEGIN
+    -- Delete the conversation and the messages they had or do nothing.
+    conversations_id := ARRAY(
+        SELECT
+            conversations_users.conversation_id
+        FROM
+            conversations_users
+        INNER JOIN
+            users
+        ON
+            conversations_users.user_id = users.id
+        WHERE
+            users.uuid IN (blocker, blocked)
+    );
+
+    DELETE FROM
+        messages
+    WHERE
+        conversation_id = ANY(conversations_id);
+
+    DELETE FROM
+        conversations_users
+    WHERE
+        conversation_id = ANY(conversations_id);
+
+    DELETE FROM
+        conversations
+    WHERE
+        id = ANY(conversations_id);
+
+    WITH 
+        blocker_id
+    AS (
+        SELECT
+            id
+        FROM
+            users
+        WHERE
+            uuid = blocker
+    ),
+        blocked_id
+    AS (
+        SELECT
+            id
+        FROM
+            users
+        WHERE
+            uuid = blocked
+    )
+    INSERT INTO
+        blocks
+    (
+        blocker,
+        blocked
+    )
+    VALUES
+    (
+        (SELECT id FROM blocker_id),
+        (SELECT id FROM blocked_id)
+    );
+
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;

@@ -468,36 +468,8 @@ export async function userBlock({
     uuidOut,
 }: UserActionArgs): Promise<true | null> {
     const query = `
-        WITH 
-            blocker_id
-        AS (
-            SELECT
-                id
-            FROM
-                users
-            WHERE
-                uuid = $1
-        ),
-            blocked_id
-        AS (
-            SELECT
-                id
-            FROM
-                users
-            WHERE
-                uuid = $2
-        )
-        INSERT INTO
-            blocks
-        (
-            blocker,
-            blocked
-        )
-        VALUES
-        (
-            (SELECT id FROM blocker_id),
-            (SELECT id FROM blocked_id)
-        )`;
+        SELECT block_user($1, $2)
+    `;
 
     try {
         const { rowCount } = await db.query(query, [uuidIn, uuidOut]);
