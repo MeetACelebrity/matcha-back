@@ -53,6 +53,7 @@ export interface SetNotif extends ModelArgs {
     ws: WS;
     destUuid: string;
     sendUuid: string;
+    senderUsername: string;
     type: NotificationType;
 }
 
@@ -249,14 +250,14 @@ export function generateNotifMessage({
     type: NotificationType;
 }): string {
     const notificationMessages = new Map([
-        ['GOT_LIKE', ' liked your profile'],
-        ['GOT_VISIT', ' visit your profile'],
-        ['GOT_MESSAGE', ' send you a message'],
-        ['GOT_LIKE_MUTUAL', ' has matched with you'],
-        ['GOT_UNLIKE_MUTUAL', ' has unmatched you '],
+        [NotificationType.GOT_LIKE, ' liked your profile'],
+        [NotificationType.GOT_VISIT, ' is visiting your profile'],
+        [NotificationType.GOT_MESSAGE, ' sent you a message'],
+        [NotificationType.GOT_LIKE_MUTUAL, ' has matched with you'],
+        [NotificationType.GOT_UNLIKE_MUTUAL, ' has unmatched you '],
     ]);
 
-    return username + notificationMessages.get(String(type));
+    return username + notificationMessages.get(type);
 }
 
 export async function setNotif({
@@ -264,6 +265,7 @@ export async function setNotif({
     ws,
     destUuid,
     sendUuid,
+    senderUsername,
     type,
 }: SetNotif): Promise<true | null> {
     const query = `
@@ -294,21 +296,17 @@ export async function setNotif({
                 notifier_user_id
             )
         VALUES (
-                $1,
-                $4,
-                (SELECT id FROM id_dest),
-                (SELECT id FROM id_send)
-            )
-        RETURNING
-            (SELECT username FROM id_dest)`;
+            $1,
+            $4,
+            (SELECT id FROM id_dest),
+            (SELECT id FROM id_send)
+        )
+    `;
 
     try {
         const notifUuid = uuid();
-        const {
-            rows: [user],
-        } = await db.query(query, [notifUuid, destUuid, sendUuid, type]);
+        await db.query(query, [notifUuid, destUuid, sendUuid, type]);
 
-        console.log(user, '|', user.username);
         // notif user
         ws.broadcastToUsers([destUuid], {
             type: OutMessageType.NEW_NOTIFICATION,
@@ -317,7 +315,7 @@ export async function setNotif({
                 uuid: notifUuid,
                 message: generateNotifMessage({
                     type,
-                    username: user.username,
+                    username: senderUsername,
                 }),
                 seen: false,
                 createdAt: +new Date(),

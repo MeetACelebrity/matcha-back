@@ -38,6 +38,7 @@ export default function publicUser(router: express.Router) {
                 db: res.locals.db,
                 ws: res.locals.ws,
                 uuidIn: user.uuid,
+                userInUsername: user.username,
                 uuidOut: req.params.uuid,
             });
 
@@ -188,6 +189,7 @@ export default function publicUser(router: express.Router) {
                 db: res.locals.db,
                 ws: res.locals.ws,
                 uuidIn: user.uuid,
+                userInUsername: user.username,
                 uuidOut: req.params.uuid,
             });
             if (result === null) {
@@ -216,6 +218,7 @@ export default function publicUser(router: express.Router) {
                 db: res.locals.db,
                 ws: res.locals.ws,
                 uuidIn: user.uuid,
+                userInUsername: user.username,
                 uuidOut: req.params.uuid,
             });
             if (result === null) {

@@ -18,6 +18,7 @@ export interface HistoryUser {
 export interface UserLikeArgs extends ModelArgs {
     ws: WS;
     uuidIn: string;
+    userInUsername: string;
     uuidOut: string;
 }
 
@@ -221,6 +222,7 @@ export async function userLike({
     db,
     ws,
     uuidIn,
+    userInUsername,
     uuidOut,
 }: UserLikeArgs): Promise<true | null> {
     const query = `
@@ -290,6 +292,7 @@ export async function userLike({
             ws,
             destUuid: uuidOut,
             sendUuid: uuidIn,
+            senderUsername: userInUsername,
             type: notificationType,
         });
 
@@ -311,6 +314,7 @@ export async function userUnLike({
     db,
     ws,
     uuidIn,
+    userInUsername,
     uuidOut,
 }: UserLikeArgs): Promise<true | null> {
     const query = `
@@ -363,6 +367,7 @@ export async function userUnLike({
                 ws,
                 destUuid: uuidOut,
                 sendUuid: uuidIn,
+                senderUsername: userInUsername,
                 type: NotificationType.GOT_UNLIKE_MUTUAL,
             });
             await deleteConv({ db, uuid1: uuidIn, uuid2: uuidOut });
@@ -384,6 +389,7 @@ export async function userSee({
     db,
     ws,
     uuidIn,
+    userInUsername,
     uuidOut,
 }: UserLikeArgs): Promise<{ liker: number } | null> {
     const query = `
@@ -439,6 +445,7 @@ export async function userSee({
             ws,
             destUuid: uuidOut,
             sendUuid: uuidIn,
+            senderUsername: userInUsername,
             type: NotificationType.GOT_VISIT,
         });
 
