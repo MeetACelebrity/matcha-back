@@ -61,6 +61,10 @@ export interface Notif extends ModelArgs {
     uuid: string;
 }
 
+export interface SetSawMessagesToTrueArgs extends ModelArgs {
+    userUuid: string;
+}
+
 export async function createConv({
     db,
     ws,
@@ -387,6 +391,29 @@ export async function getNotifs({ db, uuid }: Notif) {
                 createdAt: Date.parse(createdAt),
             })
         );
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function setSawMessagesToTrue({
+    db,
+    userUuid,
+}: SetSawMessagesToTrueArgs): Promise<boolean | null> {
+    const query = `
+        UPDATE
+            users
+        SET
+            saw_messages = TRUE
+        WHERE
+            uuid = $1
+    `;
+
+    try {
+        const { rowCount } = await db.query(query, [userUuid]);
+
+        return rowCount === 1;
     } catch (e) {
         console.error(e);
         return null;

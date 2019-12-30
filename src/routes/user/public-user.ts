@@ -12,8 +12,8 @@ import {
     userReport,
     userNotInterested,
 } from '../../models/public-user';
-import { getUserByUuid, seenMessage } from '../../models/user';
-import { getNotifs, seenNotif } from '../../models/chat';
+import { getUserByUuid } from '../../models/user';
+import { getNotifs, seenNotif, setSawMessagesToTrue } from '../../models/chat';
 
 const enum PublicUserStatusCode {
     DONE = 'DONE',
@@ -51,29 +51,6 @@ export default function publicUser(router: express.Router) {
                 ...internalUserToPublicUser(searchUser),
                 isLiker: seeUser.liker ? true : false,
             });
-        } catch (e) {
-            console.error(e);
-        }
-    });
-
-    router.get('/seen/message/:uuid', async (req, res) => {
-        try {
-            const { user }: Context = res.locals;
-
-            if (user === null) {
-                res.sendStatus(404);
-                return;
-            }
-
-            const result = await seenMessage({
-                db: res.locals.db,
-                uuid: req.params.uuid,
-            });
-            if (result === null) {
-                res.sendStatus(404);
-                return;
-            }
-            res.json({ result: 'DONE' });
         } catch (e) {
             console.error(e);
         }
@@ -308,6 +285,34 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+        }
+    });
+
+    router.put('/chat/saw-messages', async (req, res) => {
+        try {
+            const { user, db }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(403);
+                return;
+            }
+
+            const result = await setSawMessagesToTrue({
+                db,
+                userUuid: user.uuid,
+            });
+
+            switch (result) {
+                case true:
+                    res.json({ statusCode: 'DONE' });
+                    return;
+                default:
+                    res.sendStatus(404);
+                    return;
+            }
+        } catch (e) {
+            console.error(e);
+            res.sendStatus(404);
         }
     });
 }

@@ -176,7 +176,7 @@ export interface ExternalUser {
     username: string;
     isOnline: boolean;
     lastSeen: number;
-    seenMessage: Boolean;
+    sawMessages: boolean;
     email: string;
     score: number;
     createdAt: string;
@@ -192,10 +192,6 @@ export interface ExternalUser {
     images: Image[];
     addresses: Addresses[];
     tags: Tags[];
-}
-
-export interface SeenMessage extends ModelArgs {
-    uuid: string;
 }
 
 /**
@@ -221,7 +217,7 @@ export function internalUserToExternalUser({
     username,
     isOnline,
     lastSeen,
-    seenMessage,
+    sawMessages,
     email,
     createdAt,
     confirmed,
@@ -245,7 +241,7 @@ export function internalUserToExternalUser({
         email,
         isOnline,
         lastSeen,
-        seenMessage,
+        sawMessages,
         createdAt,
         confirmed,
         birthday,
@@ -259,22 +255,6 @@ export function internalUserToExternalUser({
         addresses,
         tags,
     };
-}
-
-export async function seenMessage({
-    db,
-    uuid,
-}: SeenMessage): Promise<true | null> {
-    const query = `UPDATE users SET seen_message = TRUE WHERE users.uuid = $1`;
-
-    try {
-        const { rowCount } = await db.query(query, [uuid]);
-        if (rowCount === 0) return null;
-        return true;
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
 }
 
 export async function score({
@@ -462,7 +442,7 @@ export async function getUserByUuid({
             users.location,
             users.roaming,
             users.online as "isOnline",
-            users.seen_message as "seenMessage",
+            users.saw_messages as "sawMessages",
             users.last_seen as "lastSeen",
             like_status( (SELECT id FROM users WHERE uuid = $2),users.id) as "likeStatus",
             extended_profiles.birthday,

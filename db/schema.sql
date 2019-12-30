@@ -58,7 +58,8 @@ CREATE TABLE "users" (
   "location" bool NOT NULL DEFAULT false,
   "score" int NOT NULL DEFAULT 0,
   "primary_address_id" int,
-  "current_address_id" int
+  "current_address_id" int,
+  "saw_messages" bool NOT NULL DEFAULT true
 );
 
 CREATE TABLE "addresses" (

@@ -603,7 +603,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION create_message("conv_uuid" uuid, "author_uuid" uuid, "payload" text, "message_uuid" uuid) RETURNS boolean AS $$
     DECLARE
         conv record;
-        user_id record;
+        author_id INTEGER;
+        user_id INTEGER;
         checker record;
     BEGIN
     -- Get id of conv
@@ -624,13 +625,13 @@ CREATE OR REPLACE FUNCTION create_message("conv_uuid" uuid, "author_uuid" uuid, 
         SELECT
             id
         INTO
-            user_id
+            author_id
         FROM
             users
         WHERE
             uuid = $2;
             
-        IF user_id.id IS NULL THEN
+        IF author_id IS NULL THEN
             RETURN FALSE;
         END IF;
 
@@ -642,7 +643,7 @@ CREATE OR REPLACE FUNCTION create_message("conv_uuid" uuid, "author_uuid" uuid, 
         FROM
             conversations_users
         WHERE
-            conversations_users.user_id = user_id.id
+            conversations_users.user_id = author_id
         AND
             conversations_users.conversation_id = conv.id;
         
@@ -660,10 +661,36 @@ CREATE OR REPLACE FUNCTION create_message("conv_uuid" uuid, "author_uuid" uuid, 
             )
             VALUES (
                 $4,
-                user_id.id,
+                author_id,
                 conv.id,
                 $3
             );
+
+        -- Set the property `saw_messages` to `FALSE` for all the conversations members except the message author.
+        FOR user_id IN
+            SELECT
+                id
+            FROM
+                conversations_users
+            INNER JOIN
+                users
+            ON
+                conversations_users.user_id = users.id
+            WHERE
+                conversations_users.conversation_id = conv.id
+        LOOP
+            IF user_id = author_id THEN
+                CONTINUE;
+            END IF;
+
+            UPDATE
+                users
+            SET
+                saw_messages = FALSE
+            WHERE
+                id = user_id;
+        END LOOP;
+
         RETURN TRUE;
     END;
 $$ LANGUAGE plpgsql;
