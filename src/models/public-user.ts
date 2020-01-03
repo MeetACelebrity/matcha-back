@@ -133,7 +133,18 @@ export async function getVisitorsByUuid({
         $3
     `;
     try {
-        const { rows: visitors } = await db.query(query, [uuid, limit, offset]);
+        const { rows: visitors, rowCount } = await db.query(query, [
+            uuid,
+            limit,
+            offset,
+        ]);
+
+        if (rowCount === 0) {
+            return {
+                data: [],
+                hasMore: false,
+            };
+        }
 
         const hasMore = visitors[0].size - offset - limit > 0 ? true : false;
         const data = visitors.map(({ src, username, uuid, createdAt }) => ({
@@ -198,7 +209,18 @@ export async function getLikerByUuid({
         OFFSET
             $3`;
     try {
-        const { rows: likers } = await db.query(query, [uuid, limit, offset]);
+        const { rows: likers, rowCount } = await db.query(query, [
+            uuid,
+            limit,
+            offset,
+        ]);
+
+        if (rowCount === 0) {
+            return {
+                data: [],
+                hasMore: false,
+            };
+        }
 
         const hasMore =
             Array.isArray(likers) &&
