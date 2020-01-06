@@ -204,20 +204,23 @@ export async function getConvs({
                     : null,
             messages:
                 conv_messages !== null
-                    ? conv_messages.map((convMessage: string) => ({
-                          uuid: convMessage.slice(1, -1).split(',')[0],
-                          authorUuid: convMessage.slice(1, -1).split(',')[1],
-                          authorUsername: convMessage
-                              .slice(1, -1)
-                              .split(',')[2],
-                          payload: convMessage
-                              .slice(1, -1)
-                              .split(',')[3]
-                              .replace(/['"]+/g, ''),
-                          createdAt: Date.parse(
-                              convMessage.slice(1, -1).split(',')[4]
-                          ),
-                      }))
+                    ? conv_messages.map((convMessage: string) => {
+                          const [
+                              uuid,
+                              authorUuid,
+                              authorUsername,
+                              payload,
+                              createdAt,
+                          ] = convMessage.slice(1, -1).split(',');
+
+                          return {
+                              uuid,
+                              authorUuid,
+                              createdAt,
+                              authorUsername,
+                              payload: payload.replace(/['"]+/g, ''),
+                          };
+                      })
                     : null,
         }));
     } catch (e) {
@@ -381,29 +384,35 @@ export async function getNotifs({ db, uuid }: Notif) {
                 uuid = $1
         )
         SELECT
-            uuid,
-            type,
-            (SELECT username FROM users WHERE id = notifications.notifier_user_id),
-            seen,
-            created_at as "createdAt"
+            notifications.uuid,
+            notifications.type,
+            users.username,
+            notifications.seen,
+            notifications.created_at as "createdAt"
         FROM
+            id_user,
             notifications
+        INNER JOIN
+            users
+        ON
+            notifications.notifier_user_id = users.id
         WHERE
-            notified_user_id = ( SELECT id FROM id_user)
+            notifications.notified_user_id = id_user.id
         ORDER BY
-            created_at
+            notifications.created_at
         DESC
             `;
 
     try {
         const { rows: notifications } = await db.query(query, [uuid]);
+
         return notifications.map(
             ({ uuid, type, username, seen, createdAt }) => ({
                 uuid,
                 seen,
                 type,
+                createdAt,
                 message: generateNotifMessage({ username, type }),
-                createdAt: Date.parse(createdAt),
             })
         );
     } catch (e) {
