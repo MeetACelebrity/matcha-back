@@ -7,6 +7,7 @@ import {
     setPasswordReset,
     resetingPassword,
     internalUserToExternalUser,
+    getUserByUuid,
 } from '../../models/user';
 import { Context } from '../../app';
 
@@ -103,7 +104,19 @@ export default function setupResetPassword(router: express.Router) {
 
             console.log('we will set the session to', user);
             req.session!.user = user.uuid;
-            res.redirect(FRONT_ENDPOINT);
+
+            const userToSend = await getUserByUuid({
+                db: res.locals.db,
+                uuid: user.uuid,
+            });
+
+            res.json({
+                statusCode: ResetPasswordStatusCode.DONE,
+                user:
+                    userToSend === null
+                        ? null
+                        : internalUserToExternalUser(userToSend),
+            });
         } catch (e) {
             console.error(e);
         }
