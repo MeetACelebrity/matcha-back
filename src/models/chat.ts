@@ -194,13 +194,19 @@ export async function getConvs({
             uuid,
             users:
                 conv_users !== null
-                    ? conv_users.map((convUser: string) => ({
-                          uuid: convUser.slice(1, -1).split(',')[0],
-                          username: convUser.slice(1, -1).split(',')[1],
-                          profilePic: srcToPath(
-                              convUser.slice(1, -1).split(',')[2]
-                          ),
-                      }))
+                    ? conv_users.map((convUser: string) => {
+                          const [uuid, username] = convUser
+                              .slice(1, -1)
+                              .split(',');
+
+                          return {
+                              uuid,
+                              username,
+                              profilePic: srcToPath(
+                                  convUser.slice(1, -1).split(',')[2]
+                              ),
+                          };
+                      })
                     : null,
             messages:
                 conv_messages !== null
