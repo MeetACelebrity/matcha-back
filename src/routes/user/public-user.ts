@@ -13,13 +13,42 @@ import {
     userNotInterested,
 } from '../../models/public-user';
 import { getUserByUuid } from '../../models/user';
-import { getNotifs, seenNotif, setSawMessagesToTrue } from '../../models/chat';
+import {
+    getNotifs,
+    setSawMessagesToTrue,
+    sawNotifications,
+} from '../../models/chat';
 
 const enum PublicUserStatusCode {
     DONE = 'DONE',
 }
 
 export default function publicUser(router: express.Router) {
+    router.get('/saw-notifications', async (req, res) => {
+        try {
+            const { user }: Context = res.locals;
+
+            if (user === null) {
+                res.sendStatus(404);
+                return;
+            }
+
+            const result = await sawNotifications({
+                db: res.locals.db,
+                userId: user.id,
+            });
+
+            if (!result) {
+                res.sendStatus(404);
+                return;
+            }
+
+            res.json({ result: 'DONE' });
+        } catch (e) {
+            console.error(e);
+        }
+    });
+
     router.get('/:uuid', async (req, res) => {
         try {
             const { user }: Context = res.locals;
@@ -51,29 +80,6 @@ export default function publicUser(router: express.Router) {
                 ...internalUserToPublicUser(searchUser),
                 isLiker: seeUser.liker ? true : false,
             });
-        } catch (e) {
-            console.error(e);
-        }
-    });
-
-    router.get('/seen/notif/:uuid', async (req, res) => {
-        try {
-            const { user }: Context = res.locals;
-
-            if (user === null) {
-                res.sendStatus(404);
-                return;
-            }
-
-            const result = await seenNotif({
-                db: res.locals.db,
-                uuid: req.params.uuid,
-            });
-            if (result === null) {
-                res.sendStatus(404);
-                return;
-            }
-            res.json({ result: 'DONE' });
         } catch (e) {
             console.error(e);
         }

@@ -61,6 +61,10 @@ export interface Notif extends ModelArgs {
     uuid: string;
 }
 
+export interface SawNotificationsArgs extends ModelArgs {
+    userId: number;
+}
+
 export interface SetSawMessagesToTrueArgs extends ModelArgs {
     userUuid: string;
 }
@@ -338,21 +342,26 @@ export async function setNotif({
     }
 }
 
-export async function seenNotif({ db, uuid }: Notif): Promise<true | null> {
+export async function sawNotifications({
+    db,
+    userId,
+}: SawNotificationsArgs): Promise<boolean> {
     const query = `
-            UPDATE
-                notifications
-            SET
-                seen = TRUE
-            WHERE
-                uuid = $1;`;
+        UPDATE
+            notifications
+        SET
+            seen = TRUE
+        WHERE
+            notified_user_id = $1;
+    `;
+
     try {
-        const { rowCount } = await db.query(query, [uuid]);
-        if (rowCount === 0) return null;
+        await db.query(query, [userId]);
+
         return true;
     } catch (e) {
         console.error(e);
-        return null;
+        return false;
     }
 }
 
