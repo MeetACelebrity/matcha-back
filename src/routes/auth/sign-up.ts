@@ -101,7 +101,7 @@ export default function signUpMiddleware(router: express.Router) {
 
             await email.sendMail({
                 html,
-                subject: 'Meet a Celebrity - Password Reset',
+                subject: 'Welcome to Meet a Celebrity',
                 text: validationUrl,
                 to: req.body.email,
             });
