@@ -210,7 +210,10 @@ export async function getConvs({
                           authorUsername: convMessage
                               .slice(1, -1)
                               .split(',')[2],
-                          payload: convMessage.slice(1, -1).split(',')[3],
+                          payload: convMessage
+                              .slice(1, -1)
+                              .split(',')[3]
+                              .replace(/['"]+/g, ''),
                           createdAt: Date.parse(
                               convMessage.slice(1, -1).split(',')[4]
                           ),
@@ -386,7 +389,10 @@ export async function getNotifs({ db, uuid }: Notif) {
         FROM
             notifications
         WHERE
-            notified_user_id = ( SELECT id FROM id_user) 
+            notified_user_id = ( SELECT id FROM id_user)
+        ORDER BY
+            created_at
+        DESC
             `;
 
     try {

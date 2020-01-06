@@ -48,8 +48,8 @@ CREATE TABLE "users" (
   "username" text NOT NULL,
   "email" text NOT NULL,
   "password" text NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-  "last_seen" timestamp ,
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+  "last_seen" timestamptz ,
   "online" boolean NOT NULL DEFAULT FALSE,
   "seen_message" bool NOT NULL DEFAULT false,
   "extended_profile" int,
@@ -71,13 +71,13 @@ CREATE TABLE "addresses" (
   "city" text NULL,
   "country" text NULL,
   "type" address_type NOT NULL DEFAULT 'PRIMARY',
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "extended_profiles" (
   "id" SERIAL PRIMARY KEY,
   "user_id" int NOT NULL,
-  "birthday" timestamp,
+  "birthday" timestamptz,
   "gender" gender,
   "sexual_orientation" sexual_orientation DEFAULT 'BISEXUAL',
   "biography" text
@@ -102,38 +102,38 @@ CREATE TABLE "tokens" (
   "token" uuid NOT NULL,
   "user_id" int NOT NULL,
   "type" token_type NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "likes" (
   "liker" int NOT NULL,
   "liked" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "not_interested" (
   "actor" int NOT NULL,
   "target" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "reports" (
   "reporter" int NOT NULL,
   "reported" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "blocks" (
   "blocker" int NOT NULL,
   "blocked" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "visits" (
   "id" SERIAL PRIMARY KEY,
   "visitor" int NOT NULL,
   "visited" int NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "messages" (
@@ -142,13 +142,13 @@ CREATE TABLE "messages" (
   "author_id" int NOT NULL,
   "conversation_id" int NOT NULL,
   "payload" text NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "conversations" (
   "id" SERIAL PRIMARY KEY,
   "uuid" uuid NOT NULL,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "conversations_users" (
@@ -164,7 +164,7 @@ CREATE TABLE "notifications" (
   "notified_user_id" int NOT NULL,
   "notifier_user_id" int NOT NULL,
   "seen" boolean NOT NULL DEFAULT FALSE,
-  "created_at" timestamp NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+  "created_at" timestamptz NOT NULL DEFAULT (CURRENT_TIMESTAMP)
 );
 
 CREATE TABLE "tags" (
