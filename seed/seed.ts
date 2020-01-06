@@ -111,7 +111,10 @@ class User {
                 faker.random.number({ min: 0, max: tagsChoices.length - 1 })
             ];
 
-        this.pics = `${faker.random.number({ min: 1, max: 7 })}.jpg`;
+        this.pics =
+            this.gender === 1
+                ? `${faker.random.number({ min: 1, max: 4 })}.jpg`
+                : `${faker.random.number({ min: 5, max: 7 })}.jpg`;
     }
 
     get userUuid() {
