@@ -78,7 +78,7 @@ export default function signUpMiddleware(router: express.Router) {
             const result = await createUser({ db, ...req.body });
 
             if (result === null) {
-                res.status(500);
+                res.status(400);
                 res.json({
                     statusCode: SignUpStatusCode.FORBIDDEN_INFORMATION,
                 });
