@@ -257,7 +257,10 @@ export class WS extends server {
         const members = this.rooms.get(roomId);
         if (members === undefined) return;
 
-        this.rooms.set(roomId, members.filter(uuid => uuid !== userId));
+        this.rooms.set(
+            roomId,
+            members.filter(uuid => uuid !== userId)
+        );
     }
 
     subscribeUsersToRoom(roomId: string, usersId: string[]) {
@@ -284,5 +287,9 @@ export class WS extends server {
 
     broadcastToRoom(roomId: string, data: OutMessage) {
         return this.broadcastToRoomExclusively(roomId, data);
+    }
+
+    getMembersOfRoom(roomId: string) {
+        return this.rooms.get(roomId);
     }
 }

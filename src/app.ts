@@ -12,9 +12,18 @@ import { FRONT_ENDPOINT } from './constants';
 import routes from './routes';
 import { Database } from './database';
 import { Cloud } from './cloud';
-import { InternalUser, getUserByUuid } from './models/user';
+import {
+    InternalUser,
+    getUserByUuid,
+    getUsernameByUserUuid,
+} from './models/user';
 import { WS, InMessageType, OutMessageType } from './ws';
-import { getConvs, createMessage } from './models/chat';
+import {
+    getConvs,
+    createMessage,
+    setNotif,
+    NotificationType,
+} from './models/chat';
 import { onlineUser } from './models/public-user';
 import Email from './email';
 
@@ -83,8 +92,6 @@ async function app() {
                     break;
                 }
                 case InMessageType.NEW_MESSAGE: {
-                    console.log('new message', body, userUuid);
-
                     const message = await createMessage({
                         db,
                         authorUuid: userUuid,
@@ -105,6 +112,28 @@ async function app() {
                             },
                         },
                         [userUuid]
+                    );
+
+                    const authorUsername = await getUsernameByUserUuid({
+                        db,
+                        uuid: userUuid,
+                    });
+
+                    const convMembers = (
+                        ws.getMembersOfRoom(body.payload.conversationId) || []
+                    ).filter(memberId => memberId !== userUuid);
+
+                    await Promise.all(
+                        convMembers.map(destUuid =>
+                            setNotif({
+                                db,
+                                ws,
+                                destUuid,
+                                sendUuid: userUuid,
+                                senderUsername: authorUsername || 'username',
+                                type: NotificationType.GOT_MESSAGE,
+                            })
+                        )
                     );
                     break;
                 }

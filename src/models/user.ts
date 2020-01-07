@@ -204,6 +204,10 @@ export interface InternalUser extends ExternalUser {
     password: string;
 }
 
+export interface GetUsernameByUserUuidArgs extends ModelArgs {
+    uuid: string;
+}
+
 export function srcToPath(src: string) {
     return `${CLOUD_ENDPOINT}${PROFILE_PICTURES_BUCKET}${src}`;
 }
@@ -1199,5 +1203,31 @@ export async function getTags({ db }: ModelArgs): Promise<Tags[] | null> {
     } catch (e) {
         console.error(e);
         return null;
+    }
+}
+
+export async function getUsernameByUserUuid({
+    db,
+    uuid,
+}: GetUsernameByUserUuidArgs): Promise<string | undefined> {
+    const query = `
+        SELECT
+            username
+        FROM
+            users
+        WHERE
+            uuid = $1
+    `;
+
+    try {
+        const {
+            rows: [{ username } = { username: undefined }],
+        } = await db.query(query, [uuid]);
+
+        return username;
+    } catch (e) {
+        console.error(e);
+
+        return undefined;
     }
 }
