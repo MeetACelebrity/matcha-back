@@ -248,28 +248,25 @@ export async function userLike({
     uuidOut,
 }: UserLikeArgs): Promise<true | null> {
     const query = `
-        WITH 
-            user_id
-        AS (
+        WITH user_id AS (
             SELECT
                 id
             FROM
                 users
             WHERE
                 uuid = $1
-        ),
-            liker_id
-        AS (
+        ), liker AS (
             SELECT
-                (SELECT id FROM user_id) as id
+                user_id.id AS "id",
+                COUNT(profile_pictures.id) AS "pictures_count"
             FROM
+                user_id,
                 profile_pictures
             WHERE
-                user_id = (SELECT id FROM user_id)
-            LIMIT 1
-        ),
-            liked_id
-        AS (
+                profile_pictures.user_id = user_id.id
+            GROUP BY
+                user_id.id
+        ), liked_id AS (
             SELECT
                 id
             FROM
@@ -277,20 +274,24 @@ export async function userLike({
             WHERE
                 uuid = $2
         )
-        INSERT INTO
-            likes
-        (
+        INSERT INTO likes (
             liker,
             liked
         )
-        VALUES
-        (
-            (SELECT id FROM liker_id),
-            (SELECT id FROM liked_id)
-        )
+        SELECT
+            liker.id,
+            liked_id.id
+        FROM
+            liker,
+            liked_id
+        WHERE
+            liker.pictures_count > 0
         RETURNING
-            is_matched((SELECT id FROM liker_id), (SELECT id FROM liked_id))
-        `;
+            is_matched(
+                (SELECT id FROM liker),
+                (SELECT id FROM liked_id)
+            )
+    `;
 
     try {
         const {
@@ -340,42 +341,46 @@ export async function userUnLike({
     uuidOut,
 }: UserLikeArgs): Promise<true | null> {
     const query = `
-    WITH 
-        user_id
-    AS (
-        SELECT
-            id
-        FROM
-            users
+        WITH user_id AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $1
+        ), liker AS (
+            SELECT
+                user_id.id AS "id",
+                COUNT(profile_pictures.id) AS "pictures_count"
+            FROM
+                user_id,
+                profile_pictures
+            WHERE
+                profile_pictures.user_id = user_id.id
+            GROUP BY
+                user_id.id
+        ), liked_id AS (
+            SELECT
+                id
+            FROM
+                users
+            WHERE
+                uuid = $2
+        )
+        DELETE FROM
+            likes
+        USING
+            liker,
+            liked_id
         WHERE
-            uuid = $1
-    ),
-        liker_id
-    AS (
-        SELECT
-            (SELECT id FROM user_id) as id
-        FROM
-            profile_pictures
-        WHERE
-            user_id = (SELECT id FROM user_id)
-    ),
-        liked_id
-    AS (
-        SELECT
-            id
-        FROM
-            users
-        WHERE
-            uuid = $2
-    )
-    DELETE FROM
-        likes
-    WHERE
-        liker =  (SELECT id FROM liker_id)
-    AND
-        liked = (SELECT id FROM liked_id)
-     RETURNING
-            is_liked((SELECT id FROM liked_id), (SELECT id FROM liker_id))`;
+            likes.liker = liker.id
+                AND
+            liker.pictures_count > 0
+        AND
+            likes.liked = liked_id.id
+        RETURNING
+            is_liked(liked_id.id, liker.id)
+    `;
 
     try {
         const {
