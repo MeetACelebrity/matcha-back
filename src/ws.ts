@@ -19,6 +19,7 @@ export enum OutMessageType {
     NEW_MESSAGE = 'NEW_MESSAGE',
     NEW_NOTIFICATION = 'NEW_NOTIFICATION',
     NEW_CONVERSATION = 'NEW_CONVERSATION',
+    DELETE_CONVERSATION = 'DELETE_CONVERSATION',
 }
 
 export interface InMessageInit {
@@ -57,6 +58,13 @@ export interface OutMessageNewNotification {
     };
 }
 
+export interface OutMessageDeleteNotification {
+    type: OutMessageType.DELETE_CONVERSATION;
+    payload: {
+        uuid: string;
+    };
+}
+
 export interface OutMessageNewConversation {
     type: OutMessageType.NEW_CONVERSATION;
     payload: ConvsFormat;
@@ -65,7 +73,8 @@ export interface OutMessageNewConversation {
 export type OutMessage =
     | OutMessageNewMessage
     | OutMessageNewNotification
-    | OutMessageNewConversation;
+    | OutMessageNewConversation
+    | OutMessageDeleteNotification;
 
 export interface OnMessageCallbackArgs {
     userUuid: string;
@@ -261,6 +270,23 @@ export class WS extends server {
             roomId,
             members.filter(uuid => uuid !== userId)
         );
+    }
+
+    unsubscribeFromCommonRooms(userA: string, userB: string) {
+        const users = [userA, userB];
+
+        this.rooms.forEach((roomUsers, roomId) => {
+            if (roomUsers.includes(userA) && roomUsers.includes(userB)) {
+                this.broadcastToUsers(users, {
+                    type: OutMessageType.DELETE_CONVERSATION,
+                    payload: {
+                        uuid: roomId,
+                    },
+                });
+
+                users.forEach(user => this.unsubscribeFromRoom(roomId, user));
+            }
+        });
     }
 
     subscribeUsersToRoom(roomId: string, usersId: string[]) {

@@ -76,8 +76,8 @@ export async function createConv({
     uuid2,
 }: CreateConv): Promise<boolean | null> {
     const query = `
-        SELECT 
-            create_conv($1, $2, $3), 
+        SELECT
+            create_conv($1, $2, $3),
             (SELECT username FROM users WHERE uuid = $1) as "username1",
             (SELECT username FROM users WHERE uuid = $2) as "username2"
     `;
@@ -88,6 +88,11 @@ export async function createConv({
         const {
             rows: [result],
         } = await db.query(query, [uuid1, uuid2, conversationUuid]);
+
+        // A user has probably blocked another one.
+        // if (!(result && result.create_conv)) {
+        //     return null;
+        // }
 
         const usersId = [uuid1, uuid2];
 
@@ -104,6 +109,7 @@ export async function createConv({
                 messages: [],
             },
         });
+
         return result.create_conv;
     } catch (e) {
         console.error(e);
@@ -295,43 +301,66 @@ export async function setNotif({
     type,
 }: SetNotif): Promise<true | null> {
     const query = `
-        WITH
-            id_dest 
-        AS (
+        WITH id_dest AS (
             SELECT
                 id, username
             FROM
                 users
             WHERE
                 uuid = $2
-        ), 
-            id_send
-        AS (
+        ), id_send AS (
             SELECT
                 id
             FROM
                 users
             WHERE
                 uuid = $3
+        ), operation_permitted AS (
+            SELECT
+                COUNT(*) = 0 AS "bool"
+            FROM
+                blocks,
+                id_dest,
+                id_send
+            WHERE
+                id_dest.id = blocks.blocker
+                    AND
+                id_send.id = blocks.blocked
         )
-        INSERT INTO
-            notifications (
-                uuid,
-                type,
-                notified_user_id,
-                notifier_user_id
-            )
-        VALUES (
+        INSERT INTO notifications (
+            uuid,
+            type,
+            notified_user_id,
+            notifier_user_id
+        )
+        SELECT
             $1,
             $4,
-            (SELECT id FROM id_dest),
-            (SELECT id FROM id_send)
-        )
+            id_dest.id,
+            id_send.id
+        FROM
+            id_dest,
+            id_send,
+            operation_permitted
+        WHERE
+            operation_permitted.bool = TRUE;
     `;
 
     try {
         const notifUuid = uuid();
-        await db.query(query, [notifUuid, destUuid, sendUuid, type]);
+
+        const { rowCount } = await db.query(query, [
+            notifUuid,
+            destUuid,
+            sendUuid,
+            type,
+        ]);
+
+        if (rowCount === 0) {
+            // The operation was probably unauthorized
+
+            return null;
+        }
 
         // notif user
         ws.broadcastToUsers([destUuid], {

@@ -299,7 +299,11 @@ export async function userLike({
         } = await db.query(query, [uuidIn, uuidOut]);
 
         if (result.is_matched === true) {
-            await createConv({ db, ws, uuid1: uuidIn, uuid2: uuidOut });
+            if (
+                !(await createConv({ db, ws, uuid1: uuidIn, uuid2: uuidOut }))
+            ) {
+                // return null;
+            }
         }
 
         const notificationType =
@@ -397,6 +401,7 @@ export async function userUnLike({
                 senderUsername: userInUsername,
                 type: NotificationType.GOT_UNLIKE_MUTUAL,
             });
+
             await deleteConv({ db, uuid1: uuidIn, uuid2: uuidOut });
         }
         await score({

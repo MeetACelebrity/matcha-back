@@ -483,71 +483,92 @@ $$ LANGUAGE plpgsql;
 
 -- Chat
 CREATE OR REPLACE FUNCTION create_conv("uuid1" uuid, "uuid2" uuid, "conv" uuid) RETURNS boolean AS $$
-    DECLARE
-        user1 record;
-        user2 record;
-        conv record;
-    BEGIN
-    -- Get id of user 1
-        SELECT
-            id
-        INTO
-            user1
-        FROM
-            users
-        WHERE
-            uuid = $1;
+DECLARE
+    user1 record;
+    user2 record;
+    conv record;
 
-    -- Get id of user 2
-        SELECT
-            id
-        INTO
-            user2
-        FROM
-            users
-        WHERE
-            uuid = $2;
+    -- operation_permitted BOOLEAN;
+BEGIN
+-- Get id of user 1
+    SELECT
+        id
+    INTO
+        user1
+    FROM
+        users
+    WHERE
+        uuid = $1;
 
-        IF user1.id IS NULL OR user2.id IS NULL THEN
-            RETURN FALSE;
-        END IF;
-    -- Create conversation
-        INSERT INTO
-            conversations
-        ( uuid )
-        VALUES
-            ( $3 )
-        RETURNING
-            id
-        INTO
-            conv;
-    
-        IF conv.id IS NULL THEN
-            RETURN FALSE;
-        END IF;
+-- Get id of user 2
+    SELECT
+        id
+    INTO
+        user2
+    FROM
+        users
+    WHERE
+        uuid = $2;
 
-    -- Register user1 to conv
-        INSERT INTO
-            conversations_users ( 
-                user_id, 
-                conversation_id
-            )
-            VALUES (
-                user1.id,
-                conv.id
-            );
-     -- Register user2 to conv
-        INSERT INTO
-            conversations_users ( 
-                user_id, 
-                conversation_id
-            )
-            VALUES (
-                user2.id,
-                conv.id
-            );
+    IF user1.id IS NULL OR user2.id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    -- If one of the both users has been blocked by the other, exit.
+
+    -- SELECT
+    --     COUNT(*) = 0
+    -- INTO
+    --     operation_permitted
+    -- FROM
+    --     blocks
+    -- WHERE
+    --     (blocks.blocker = user1.id AND blocks.blocked = user2.id)
+    --         OR
+    --     (blocks.blocker = user2.id AND blocks.blocked = user1.id);
+
+    -- IF operation_permitted = FALSE THEN
+    --     RETURN FALSE;
+    -- END IF;
+
+-- Create conversation
+    INSERT INTO
+        conversations
+    ( uuid )
+    VALUES
+        ( $3 )
+    RETURNING
+        id
+    INTO
+        conv;
+
+    IF conv.id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+-- Register user1 to conv
+    INSERT INTO
+        conversations_users ( 
+            user_id, 
+            conversation_id
+        )
+        VALUES (
+            user1.id,
+            conv.id
+        );
+    -- Register user2 to conv
+    INSERT INTO
+        conversations_users ( 
+            user_id, 
+            conversation_id
+        )
+        VALUES (
+            user2.id,
+            conv.id
+        );
+
     RETURN TRUE;
-    END;
+END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION delete_conv("uuid1" uuid, "uuid2" uuid) RETURNS boolean AS $$
