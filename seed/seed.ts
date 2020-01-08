@@ -1,17 +1,20 @@
 import uuid from 'uuid/v4';
-import { hash } from 'argon2';
 import faker from 'faker';
+import { writeFileSync, readFileSync } from 'fs';
 
 import { Database } from '../src/database';
 import {
-    updateAddress,
-    updateBiography,
-    updateExtendedUser,
-    addTags,
+    updateBiographyReturnQuery,
+    updateExtendedUserReturnQuery,
+    addTagsReturnQuery,
     SexualOrientation,
-    updateProfilePics,
+    updateProfilePicsReturnQuery,
     Gender,
+    updateAddressReturnQuery,
 } from '../src/models/user';
+import { join } from 'path';
+
+const SEED_FILE_PATH = join(__dirname, './seed.json');
 
 class User {
     private uuid: string;
@@ -164,7 +167,7 @@ class User {
                     roaming
                 )
                 VALUES (
-                    'TRUE',
+                    TRUE,
                     $1,
                     $2,
                     $3,
@@ -191,78 +194,125 @@ class User {
     }
 }
 
-(async () => {
-    const db = new Database();
-    try {
-        await db.query('BEGIN');
+async function generateSeedFile(db: Database) {
+    const USERS_COUNT = 500;
 
-        const USERS_COUNT = 10;
+    const queries: { text: string; values: any[] }[] = [];
 
-        for (let index = 0; index < USERS_COUNT; index += 1) {
-            const user = new User();
+    for (let index = 0; index < USERS_COUNT; index += 1) {
+        const user = new User();
 
-            // insert user
-            await db.query(user.toPGSQL());
+        // insert user
+        queries.push(user.toPGSQL());
 
-            // insert addresses --> primary and current
-            await updateAddress({
-                db,
-                uuid: user.userUuid,
-                isPrimary: true,
-                lat: Number(user.userAddress.lat),
-                long: Number(user.userAddress.lon),
-                name: '',
-                administrative: '',
-                county: '',
-                country: '',
-                city: '',
-                auto: true,
-            });
-            await updateAddress({
-                db,
-                uuid: user.userUuid,
-                isPrimary: false,
-                lat: Number(user.userAddress.lat),
-                long: Number(user.userAddress.lon),
-                name: '',
-                administrative: '',
-                county: '',
-                country: '',
-                city: '',
-                auto: true,
-            });
+        // insert addresses --> primary and current
 
-            // insert extended profile
-            await updateExtendedUser({
+        const firstAddressResult = await updateAddressReturnQuery({
+            db,
+            uuid: user.userUuid,
+            isPrimary: true,
+            lat: Number(user.userAddress.lat),
+            long: Number(user.userAddress.lon),
+            name: '',
+            administrative: '',
+            county: '',
+            country: '',
+            city: '',
+            auto: true,
+        });
+        if (firstAddressResult === null) return;
+
+        queries.push(firstAddressResult);
+
+        const secondAddressResult = await updateAddressReturnQuery({
+            db,
+            uuid: user.userUuid,
+            isPrimary: false,
+            lat: Number(user.userAddress.lat),
+            long: Number(user.userAddress.lon),
+            name: '',
+            administrative: '',
+            county: '',
+            country: '',
+            city: '',
+            auto: true,
+        });
+        if (secondAddressResult === null) return;
+
+        queries.push(secondAddressResult);
+
+        // insert extended profile
+        queries.push(
+            updateExtendedUserReturnQuery({
                 db,
                 uuid: user.userUuid,
                 gender: user.userGender,
                 birthday: user.userBirthday.toISOString(),
                 sexualOrientation: user.userSexualOrientation,
-            });
+            })
+        );
 
-            await updateBiography({
+        queries.push(
+            updateBiographyReturnQuery({
                 db,
                 uuid: user.userUuid,
                 biography: user.userBiography,
-            });
+            })
+        );
 
-            // insert tags
-            await addTags({ db, uuid: user.userUuid, tag: user.userTag1 });
-            await addTags({ db, uuid: user.userUuid, tag: user.userTag2 });
-            await addTags({ db, uuid: user.userUuid, tag: user.userTag3 });
+        // insert tags
+        queries.push(
+            addTagsReturnQuery({ db, uuid: user.userUuid, tag: user.userTag1 })
+        );
+        queries.push(
+            addTagsReturnQuery({ db, uuid: user.userUuid, tag: user.userTag2 })
+        );
+        queries.push(
+            addTagsReturnQuery({ db, uuid: user.userUuid, tag: user.userTag3 })
+        );
 
-            // insert profile pics
-            await updateProfilePics({
+        // insert profile pics
+        queries.push(
+            updateProfilePicsReturnQuery({
                 db,
                 uuid: user.userUuid,
                 newPics: user.userPics,
-            });
-            console.log('user n ', index, ' has been created !');
-        }
-        await db.query('COMMIT');
-    } catch (e) {
-        await db.query('ROLLBACK');
-        throw e;
+            })
+        );
+        console.log('user n ', index, ' has been created !');
     }
-})().catch(e => console.error(e.stack));
+
+    writeFileSync(SEED_FILE_PATH, JSON.stringify(queries, null, 2));
+}
+
+async function insertSeedIntoDatabase(db: Database) {
+    const seed: { text: string; values: any[] }[] = JSON.parse(
+        readFileSync(SEED_FILE_PATH, {
+            encoding: 'utf-8',
+        })
+    );
+
+    const client = await db.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        for (const query of seed) {
+            await client.query(query);
+        }
+
+        await client.query('COMMIT');
+    } catch (e) {
+        console.error(e);
+        await client.query('ROLLBACK');
+    } finally {
+        client.release();
+    }
+}
+
+(async () => {
+    const db = new Database();
+
+    // Function to call
+    await insertSeedIntoDatabase(db);
+})().catch(console.error);

@@ -208,6 +208,15 @@ export interface GetUsernameByUserUuidArgs extends ModelArgs {
     uuid: string;
 }
 
+type AddressInformations = {
+    road: string;
+    house_number: string;
+    state: string;
+    county: string;
+    country: string;
+    city: string;
+};
+
 export function srcToPath(src: string) {
     return `${CLOUD_ENDPOINT}${PROFILE_PICTURES_BUCKET}${src}`;
 }
@@ -801,13 +810,12 @@ export async function updatePasswordUser({
     }
 }
 
-export async function updateExtendedUser({
-    db,
+export function updateExtendedUserReturnQuery({
     uuid,
     birthday,
     gender,
     sexualOrientation,
-}: UpdateExtendedUserArgs): Promise<true | null> {
+}: UpdateExtendedUserArgs): { text: string; values: any[] } {
     const query = ` 
         WITH
             id_user
@@ -863,15 +871,21 @@ export async function updateExtendedUser({
                 id=(
                     SELECT id FROM id_user
                 );
-            `;
+    `;
+
+    return {
+        text: query,
+        values: [uuid, birthday, gender, sexualOrientation],
+    };
+}
+
+export async function updateExtendedUser(
+    args: UpdateExtendedUserArgs
+): Promise<true | null> {
+    const query = updateExtendedUserReturnQuery(args);
 
     try {
-        const { rowCount } = await db.query(query, [
-            uuid,
-            birthday,
-            gender,
-            sexualOrientation,
-        ]);
+        const { rowCount } = await args.db.query(query);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {
@@ -880,11 +894,11 @@ export async function updateExtendedUser({
     }
 }
 
-export async function updateBiography({
+export function updateBiographyReturnQuery({
     db,
     uuid,
     biography,
-}: UpdateBiographyArgs): Promise<true | null> {
+}: UpdateBiographyArgs): { text: string; values: any[] } {
     const query = `
         WITH
             id_user
@@ -938,8 +952,20 @@ export async function updateBiography({
             );
     
     `;
+
+    return {
+        text: query,
+        values: [uuid, biography],
+    };
+}
+
+export async function updateBiography(
+    args: UpdateBiographyArgs
+): Promise<true | null> {
     try {
-        const { rowCount } = await db.query(query, [uuid, biography]);
+        const query = updateBiographyReturnQuery(args);
+
+        const { rowCount } = await args.db.query(query);
         if (rowCount === 0) return null;
         return true;
     } catch (e) {
@@ -948,7 +974,56 @@ export async function updateBiography({
     }
 }
 
-export async function updateAddress({
+const LOCATIONIQ_CACHE: Map<string, AddressInformations> = new Map();
+
+async function getAddressInformations(
+    lat: number,
+    lng: number
+): Promise<AddressInformations> {
+    const LATLNG_KEY = `${lat}|${lng}`;
+
+    const cacheResult = LOCATIONIQ_CACHE.get(LATLNG_KEY);
+
+    if (cacheResult !== undefined) {
+        return cacheResult;
+    }
+
+    const {
+        body,
+    } = await got(
+        `https://locationiq.com/v1/reverse_sandbox.php?format=json&lat=${lat}&lon=${lng}&accept-language=en`,
+        { json: true }
+    );
+
+    if (
+        typeof body.error === 'string' &&
+        body.error.startsWith('Rate Limited')
+    ) {
+        return new Promise((resolve, reject) => {
+            setTimeout(async () => {
+                try {
+                    const result = await getAddressInformations(lat, lng);
+
+                    resolve(result);
+                } catch (e) {
+                    reject(e);
+                }
+            }, 10_000);
+        });
+    }
+
+    const {
+        address: { road, house_number, state, county, country, city },
+    } = body;
+
+    const address = { road, house_number, state, county, country, city };
+
+    LOCATIONIQ_CACHE.set(`${lat}|${lng}`, address);
+
+    return address;
+}
+
+export async function updateAddressReturnQuery({
     db,
     uuid,
     isPrimary,
@@ -960,7 +1035,7 @@ export async function updateAddress({
     country,
     city,
     auto,
-}: UpdateAddressArgs): Promise<String | null> {
+}: UpdateAddressArgs): Promise<{ text: string; values: any[] } | null> {
     const query = `
         SELECT upsert_addresses($1, $2, $3, $4, $5, $6, $7, $8, $9);
     `;
@@ -969,23 +1044,17 @@ export async function updateAddress({
 
     try {
         console.log('lat: ', lat, ' | long: ', long);
-        if (auto) {
-            const {
-                body: {
-                    address: {
-                        road,
-                        house_number,
-                        state,
-                        county,
-                        country,
-                        city,
-                    },
-                },
-            } = await got(
-                `https://locationiq.com/v1/reverse_sandbox.php?format=json&lat=${lat}&lon=${long}&accept-language=en`,
-                { json: true }
-            );
 
+        const {
+            road,
+            house_number,
+            state,
+            county,
+            country,
+            city,
+        } = await getAddressInformations(lat, long);
+
+        if (auto) {
             args = [
                 `${house_number === undefined ? '' : `${house_number} `}${
                     road === undefined ? '' : `${road}`
@@ -997,9 +1066,27 @@ export async function updateAddress({
             ];
         }
 
+        return {
+            text: query,
+            values: [uuid, isPrimary, lat, long, ...args],
+        };
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+export async function updateAddress(
+    args: UpdateAddressArgs
+): Promise<String | null> {
+    try {
+        const data = await updateAddressReturnQuery(args);
+        if (data === null) return null;
+
         const {
             rows: [address],
-        } = await db.query(query, [uuid, isPrimary, lat, long, ...args]);
+        } = await args.db.query(data);
+
         return address.upsert_addresses;
     } catch (e) {
         console.error(e);
@@ -1098,20 +1185,31 @@ export async function updateRoaming({
     }
 }
 
-export async function updateProfilePics({
+export function updateProfilePicsReturnQuery({
     db,
     uuid: loggedUserUuid,
     newPics,
-}: UpdateProfilePicsArgs): Promise<string | null> {
+}: UpdateProfilePicsArgs): { text: string; values: any[] } {
     const query = `
         SELECT
             upsert_profile_picture($1, $2, $3)
     `;
 
+    return {
+        text: query,
+        values: [loggedUserUuid, newPics, uuid()],
+    };
+}
+
+export async function updateProfilePics(
+    args: UpdateProfilePicsArgs
+): Promise<string | null> {
     try {
+        const query = updateProfilePicsReturnQuery(args);
+
         const {
             rows: [image],
-        } = await db.query(query, [loggedUserUuid, newPics, uuid()]);
+        } = await args.db.query(query);
 
         return image.upsert_profile_picture || null;
     } catch (e) {
@@ -1157,18 +1255,27 @@ export async function deletePics({
     }
 }
 
-export async function addTags({
+export function addTagsReturnQuery({
     db,
     uuid: guid,
     tag,
-}: TagsArgs): Promise<string | null> {
+}: TagsArgs): { text: string; values: any[] } {
     const token = uuid();
     const query = `SELECT upsert_tag($1, $3, $2)`;
 
+    return {
+        text: query,
+        values: [guid, tag, token],
+    };
+}
+
+export async function addTags(args: TagsArgs): Promise<string | null> {
     try {
+        const query = addTagsReturnQuery(args);
+
         const {
             rows: [tags],
-        } = await db.query(query, [guid, tag, token]);
+        } = await args.db.query(query);
         return tags.upsert_tag;
     } catch (e) {
         console.error(e);
