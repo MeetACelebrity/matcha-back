@@ -112,6 +112,7 @@ export default function signUpMiddleware(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 }

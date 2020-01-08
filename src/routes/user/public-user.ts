@@ -46,6 +46,7 @@ export default function publicUser(router: express.Router) {
             res.json({ result: 'DONE' });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -82,6 +83,7 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -104,6 +106,7 @@ export default function publicUser(router: express.Router) {
             res.json(result);
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
             return null;
         }
     });
@@ -130,6 +133,7 @@ export default function publicUser(router: express.Router) {
             console.log(visitors);
             res.json({ visitors });
         } catch (e) {
+            res.sendStatus(400);
             console.error(e);
         }
     });
@@ -156,6 +160,7 @@ export default function publicUser(router: express.Router) {
             res.json({ liker });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -185,6 +190,7 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -213,6 +219,7 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -243,6 +250,7 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -269,6 +277,7 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -295,6 +304,7 @@ export default function publicUser(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -322,7 +332,7 @@ export default function publicUser(router: express.Router) {
             }
         } catch (e) {
             console.error(e);
-            res.sendStatus(404);
+            res.sendStatus(400);
         }
     });
 }

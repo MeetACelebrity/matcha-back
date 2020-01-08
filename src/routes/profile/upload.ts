@@ -56,6 +56,7 @@ export default function setupUpload(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -117,6 +118,7 @@ export default function setupUpload(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -145,6 +147,7 @@ export default function setupUpload(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 }

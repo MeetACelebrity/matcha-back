@@ -97,6 +97,7 @@ export default function signInMiddleware(router: express.Router) {
             res.json({ statusCode: SignInStatusCode.PASSWORD_INCORRECT });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 }

@@ -336,6 +336,7 @@ export default function setupTextual(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -361,6 +362,7 @@ export default function setupTextual(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -390,6 +392,7 @@ export default function setupTextual(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
     router.put('/tags/add', async (req, res) => {
@@ -415,6 +418,7 @@ export default function setupTextual(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -441,6 +445,7 @@ export default function setupTextual(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -467,6 +472,7 @@ export default function setupTextual(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -495,6 +501,7 @@ export default function setupTextual(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -512,6 +519,7 @@ export default function setupTextual(router: express.Router) {
             res.json(result);
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 }

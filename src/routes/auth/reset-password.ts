@@ -83,6 +83,7 @@ export default function setupResetPassword(router: express.Router) {
             return;
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 
@@ -119,6 +120,7 @@ export default function setupResetPassword(router: express.Router) {
             });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 }

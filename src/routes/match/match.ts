@@ -30,6 +30,7 @@ export default function profileRoutes(): express.Router {
             res.json({ ...result });
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
             return null;
         }
     });
@@ -124,6 +125,7 @@ export default function profileRoutes(): express.Router {
                 res.json({ result });
             } catch (e) {
                 console.error(e);
+                res.sendStatus(400);
             }
         }
     );
@@ -220,6 +222,7 @@ export default function profileRoutes(): express.Router {
                 res.json({ result });
             } catch (e) {
                 console.error(e);
+                res.sendStatus(400);
             }
         }
     );

@@ -28,6 +28,7 @@ export default function setupConfirmation(router: express.Router) {
             res.redirect(FRONT_ENDPOINT);
         } catch (e) {
             console.error(e);
+            res.sendStatus(400);
         }
     });
 }
