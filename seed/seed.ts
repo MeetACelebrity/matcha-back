@@ -1,5 +1,6 @@
 import uuid from 'uuid/v4';
 import faker from 'faker';
+import { subWeeks } from 'date-fns';
 import { promises as fs } from 'fs';
 
 import { Database } from '../src/database';
@@ -37,6 +38,8 @@ class User {
     private tag1: string;
     private tag2: string;
     private tag3: string;
+
+    private lastSeen: Date;
 
     private pics: string;
 
@@ -90,7 +93,7 @@ class User {
         // generate extended profiled
         this.birthday = new Date(
             Date.UTC(
-                faker.random.number({ min: 1900, max: 2001 }),
+                faker.random.number({ min: 1950, max: 2001 }),
                 faker.random.number({ min: 1, max: 12 }),
                 faker.random.number({ min: 1, max: 20 })
             )
@@ -118,6 +121,8 @@ class User {
             this.gender === 1
                 ? `${faker.random.number({ min: 1, max: 4 })}.jpg`
                 : `${faker.random.number({ min: 5, max: 7 })}.jpg`;
+
+        this.lastSeen = faker.date.between(subWeeks(new Date(), 1), new Date());
     }
 
     get userUuid() {
@@ -164,7 +169,8 @@ class User {
                     password,
                     score,
                     location,
-                    roaming
+                    roaming,
+                    last_seen
                 )
                 VALUES (
                     TRUE,
@@ -176,7 +182,8 @@ class User {
                     $6,
                     $7,
                     $8,
-                    $9
+                    $9,
+                    $10
                 )
             `,
             values: [
@@ -189,6 +196,7 @@ class User {
                 this.score,
                 this.location,
                 this.roamming,
+                this.lastSeen,
             ],
         };
     }
@@ -279,13 +287,16 @@ async function generateSeedFile(db: Database) {
                 newPics: user.userPics,
             })
         );
-        console.log('user n ', index, ' has been created !');
     }
 
-    return fs.writeFile(SEED_FILE_PATH, JSON.stringify(queries, null, 2));
+    await fs.writeFile(SEED_FILE_PATH, JSON.stringify(queries, null, 2));
+
+    console.log(`Generated the seed file and saved it at ${SEED_FILE_PATH}`);
 }
 
 async function insertSeedIntoDatabase(db: Database) {
+    console.log(`Load seed file from ${SEED_FILE_PATH}`);
+
     const seed: { text: string; values: any[] }[] = JSON.parse(
         await fs.readFile(SEED_FILE_PATH, {
             encoding: 'utf-8',
@@ -302,6 +313,8 @@ async function insertSeedIntoDatabase(db: Database) {
         }
 
         await client.query('COMMIT');
+
+        console.log('Filled the database 🎉');
     } catch (e) {
         console.error(e);
         await client.query('ROLLBACK');
