@@ -975,11 +975,15 @@ export async function updateBiography(
 }
 
 const LOCATIONIQ_CACHE: Map<string, AddressInformations> = new Map();
+const MAX_TRIES = 3;
 
 async function getAddressInformations(
     lat: number,
-    lng: number
-): Promise<AddressInformations> {
+    lng: number,
+    count: number | undefined = 0
+): Promise<AddressInformations | null> {
+    if (count >= MAX_TRIES) return null;
+
     const LATLNG_KEY = `${lat}|${lng}`;
 
     const cacheResult = LOCATIONIQ_CACHE.get(LATLNG_KEY);
@@ -1002,7 +1006,11 @@ async function getAddressInformations(
         return new Promise((resolve, reject) => {
             setTimeout(async () => {
                 try {
-                    const result = await getAddressInformations(lat, lng);
+                    const result = await getAddressInformations(
+                        lat,
+                        lng,
+                        count + 1
+                    );
 
                     resolve(result);
                 } catch (e) {
@@ -1024,7 +1032,6 @@ async function getAddressInformations(
 }
 
 export async function updateAddressReturnQuery({
-    db,
     uuid,
     isPrimary,
     lat,
@@ -1045,6 +1052,12 @@ export async function updateAddressReturnQuery({
     try {
         console.log('lat: ', lat, ' | long: ', long);
 
+        const addressInformations = await getAddressInformations(lat, long);
+        if (addressInformations === null) {
+            // We probably exceeded the maximum fetches tries.
+            return null;
+        }
+
         const {
             road,
             house_number,
@@ -1052,7 +1065,7 @@ export async function updateAddressReturnQuery({
             county,
             country,
             city,
-        } = await getAddressInformations(lat, long);
+        } = addressInformations;
 
         if (auto) {
             args = [
