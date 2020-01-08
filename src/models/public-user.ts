@@ -295,7 +295,12 @@ export async function userLike({
     try {
         const {
             rows: [result],
+            rowCount,
         } = await db.query(query, [uuidIn, uuidOut]);
+
+        if (rowCount === 0) {
+            return null;
+        }
 
         if (result.is_matched === true) {
             if (
@@ -385,7 +390,12 @@ export async function userUnLike({
     try {
         const {
             rows: [result],
+            rowCount,
         } = await db.query(query, [uuidIn, uuidOut]);
+
+        if (rowCount === 0) {
+            return null;
+        }
 
         if (result.is_liked === true) {
             // send notif to uuidOut: "uuidIn unlike your profile :("
