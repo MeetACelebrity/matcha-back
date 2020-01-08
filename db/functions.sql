@@ -873,16 +873,10 @@ CREATE OR REPLACE FUNCTION get_convs("user_uuid" uuid) RETURNS TABLE (
 $$ LANGUAGE plpgsql;
 
 -- Proposals
-CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS int AS $$
+CREATE OR REPLACE FUNCTION is_blocked("me_id" int, "user_id" int) RETURNS boolean AS $$
     DECLARE
-        me_info record;
-        user_info record;
         is_block record;
-        research_orientation sexual_orientation;
-        research_gender gender;
     BEGIN
-    
-    -- Ckeck if user block each other
         SELECT 
             *
         INTO
@@ -901,6 +895,22 @@ CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS in
         );
 
         IF is_block IS NOT NULL THEN
+            RETURN FALSE;
+        END IF;
+        RETURN TRUE;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION researched_sex("me_id" int, "user_id" int) RETURNS int AS $$
+    DECLARE
+        me_info record;
+        user_info record;
+        is_block record;
+        research_orientation sexual_orientation;
+        research_gender gender;
+    BEGIN
+
+        IF is_blocked($1, $2) = FALSE THEN
             RETURN 0;
         END IF;
 

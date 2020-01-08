@@ -56,7 +56,7 @@ CREATE TABLE "users" (
   "confirmed" bool NOT NULL DEFAULT false,
   "roaming" roaming_preferences NOT NULL DEFAULT 'NOT_SET',
   "location" bool NOT NULL DEFAULT false,
-  "score" int NOT NULL DEFAULT 0,
+  "score" int NOT NULL DEFAULT 100,
   "primary_address_id" int,
   "current_address_id" int,
   "saw_messages" bool NOT NULL DEFAULT true

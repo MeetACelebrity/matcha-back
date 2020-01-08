@@ -231,7 +231,8 @@ export default function publicUser(router: express.Router) {
                 uuidOut: req.params.uuid,
             });
 
-            // ws.unsubscribeFromCommonRooms(user.uuid, req.params.uuid);
+            const ws = res.locals.ws;
+            ws.unsubscribeFromCommonRooms(user.uuid, req.params.uuid);
 
             if (result === null) {
                 res.sendStatus(404);

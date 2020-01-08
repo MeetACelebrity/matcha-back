@@ -440,6 +440,11 @@ export async function getUserByUuid({
     uuid,
     meUuid,
 }: GetUserByUuidArgs): Promise<InternalUser | null> {
+    const isBlocked = `
+        SELECT
+            is_blocked((SELECT id FROM users WHERE uuid = $1),  (SELECT id FROM users WHERE uuid = $2)) AS "blockStatus"
+        `;
+
     const basicInformationsQuery = `
         SELECT
             users.id,
@@ -545,6 +550,10 @@ export async function getUserByUuid({
         `;
     try {
         const uuid2 = meUuid ? meUuid : uuid;
+        const {
+            rows: [result],
+        } = await db.query(isBlocked, [uuid, uuid2]);
+        if (result.blockStatus === false) return null;
         const {
             rows: [user],
         } = await db.query(basicInformationsQuery, [uuid, uuid2]);

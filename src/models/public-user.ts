@@ -286,6 +286,8 @@ export async function userLike({
             liked_id
         WHERE
             liker.pictures_count > 0
+        AND
+            is_blocked(liker.id, liked_id.id) = TRUE
         RETURNING
             is_matched(
                 (SELECT id FROM liker),
