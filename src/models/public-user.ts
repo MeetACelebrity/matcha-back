@@ -255,17 +255,16 @@ export async function userLike({
                 users
             WHERE
                 uuid = $1
-        ), liker AS (
+        ), liker_id AS (
             SELECT
-                user_id.id AS "id",
-                COUNT(profile_pictures.id) AS "pictures_count"
+                user_id.id AS "id"
             FROM
                 user_id,
                 profile_pictures
             WHERE
                 profile_pictures.user_id = user_id.id
-            GROUP BY
-                user_id.id
+                    AND
+                profile_pictures.image_nb = 0
         ), liked_id AS (
             SELECT
                 id
@@ -279,18 +278,16 @@ export async function userLike({
             liked
         )
         SELECT
-            liker.id,
+            liker_id.id,
             liked_id.id
         FROM
-            liker,
+            liker_id,
             liked_id
         WHERE
-            liker.pictures_count > 0
-        AND
-            is_blocked(liker.id, liked_id.id) = TRUE
+            is_blocked(liker_id.id, liked_id.id) = TRUE
         RETURNING
             is_matched(
-                (SELECT id FROM liker),
+                (SELECT id FROM liker_id),
                 (SELECT id FROM liked_id)
             )
     `;
@@ -354,17 +351,16 @@ export async function userUnLike({
                 users
             WHERE
                 uuid = $1
-        ), liker AS (
+        ), liker_id AS (
             SELECT
-                user_id.id AS "id",
-                COUNT(profile_pictures.id) AS "pictures_count"
+                user_id.id AS "id"
             FROM
                 user_id,
                 profile_pictures
             WHERE
                 profile_pictures.user_id = user_id.id
-            GROUP BY
-                user_id.id
+                    AND
+                profile_pictures.image_nb = 0
         ), liked_id AS (
             SELECT
                 id
@@ -376,16 +372,14 @@ export async function userUnLike({
         DELETE FROM
             likes
         USING
-            liker,
+            liker_id,
             liked_id
         WHERE
-            likes.liker = liker.id
-                AND
-            liker.pictures_count > 0
+            likes.liker = liker_id.id
         AND
             likes.liked = liked_id.id
         RETURNING
-            is_liked(liked_id.id, liker.id)
+            is_liked(liked_id.id, liker_id.id)
     `;
 
     try {
