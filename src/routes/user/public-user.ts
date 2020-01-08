@@ -196,7 +196,7 @@ export default function publicUser(router: express.Router) {
 
     router.post('/unlike/:uuid', async (req, res) => {
         try {
-            const { user }: Context = res.locals;
+            const { user, ws }: Context = res.locals;
 
             if (user === null) {
                 res.sendStatus(404);
@@ -210,6 +210,9 @@ export default function publicUser(router: express.Router) {
                 userInUsername: user.username,
                 uuidOut: req.params.uuid,
             });
+
+            ws.unsubscribeFromCommonRooms(user.uuid, req.params.uuid);
+
             if (result === null) {
                 res.sendStatus(404);
                 return;
@@ -225,7 +228,7 @@ export default function publicUser(router: express.Router) {
 
     router.post('/block/:uuid', async (req, res) => {
         try {
-            const { user }: Context = res.locals;
+            const { user, ws }: Context = res.locals;
 
             if (user === null) {
                 res.sendStatus(404);
@@ -238,7 +241,6 @@ export default function publicUser(router: express.Router) {
                 uuidOut: req.params.uuid,
             });
 
-            const ws = res.locals.ws;
             ws.unsubscribeFromCommonRooms(user.uuid, req.params.uuid);
 
             if (result === null) {
