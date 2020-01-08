@@ -1,6 +1,6 @@
 import uuid from 'uuid/v4';
 import faker from 'faker';
-import { writeFileSync, readFileSync } from 'fs';
+import { promises as fs } from 'fs';
 
 import { Database } from '../src/database';
 import {
@@ -195,7 +195,7 @@ class User {
 }
 
 async function generateSeedFile(db: Database) {
-    const USERS_COUNT = 500;
+    const USERS_COUNT = 100;
 
     const queries: { text: string; values: any[] }[] = [];
 
@@ -282,12 +282,12 @@ async function generateSeedFile(db: Database) {
         console.log('user n ', index, ' has been created !');
     }
 
-    writeFileSync(SEED_FILE_PATH, JSON.stringify(queries, null, 2));
+    return fs.writeFile(SEED_FILE_PATH, JSON.stringify(queries, null, 2));
 }
 
 async function insertSeedIntoDatabase(db: Database) {
     const seed: { text: string; values: any[] }[] = JSON.parse(
-        readFileSync(SEED_FILE_PATH, {
+        await fs.readFile(SEED_FILE_PATH, {
             encoding: 'utf-8',
         })
     );
@@ -312,6 +312,8 @@ async function insertSeedIntoDatabase(db: Database) {
 
 (async () => {
     const db = new Database();
+
+    await generateSeedFile(db);
 
     // Function to call
     await insertSeedIntoDatabase(db);
