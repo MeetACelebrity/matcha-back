@@ -88,8 +88,8 @@ type ValidatorClasses =
     | ValidatorObject
     | ValidatorArray;
 
-interface Modifier {
-    (obj: { [key: string]: any }, key: string): void;
+interface Modifier<T> {
+    (value: T): T;
 }
 
 interface ValidatorClassesObject {
@@ -142,8 +142,6 @@ export class Validator {
         try {
             const result = schema.valid(value);
 
-            console.log('result', result);
-
             if (result) return true;
             return false;
         } catch (e) {
@@ -158,7 +156,7 @@ export class ValidatorPrimitive<T> {
     protected constraints: Constraints = Constraints.NONE;
     private authorizedValues: null | T[] = null;
 
-    protected modifiers: Modifier[] = [];
+    protected modifiers: Modifier<T>[] = [];
 
     constructor(types: Types) {
         this[VALIDATOR] = types;
@@ -213,8 +211,8 @@ export class ValidatorPrimitive<T> {
         return true;
     }
 
-    applyModifications(obj: { [key: string]: any }, key: string) {
-        this.modifiers.forEach(fn => fn(obj, key));
+    applyModifications(value: T): T {
+        return this.modifiers.reduce((agg, modifier) => modifier(agg), value);
     }
 }
 
@@ -269,9 +267,7 @@ export class ValidatorString extends ValidatorPrimitive<string> {
         if ((this.constraints & Constraints.UPPERCASE) !== 0) return this;
 
         if (enabled) {
-            this.modifiers.push((obj, key) => {
-                obj[key] = (obj[key] as string).toUpperCase();
-            });
+            this.modifiers.push(value => value.toUpperCase());
         } else {
             this.constraints |= Constraints.UPPERCASE;
         }
@@ -283,9 +279,7 @@ export class ValidatorString extends ValidatorPrimitive<string> {
         if ((this.constraints & Constraints.LOWERCASE) !== 0) return this;
 
         if (enabled) {
-            this.modifiers.push((obj, key) => {
-                obj[key] = (obj[key] as string).toLowerCase();
-            });
+            this.modifiers.push(value => value.toLowerCase());
         } else {
             this.constraints |= Constraints.LOWERCASE;
         }
@@ -297,9 +291,7 @@ export class ValidatorString extends ValidatorPrimitive<string> {
         if ((this.constraints & Constraints.TRIM) !== 0) return this;
 
         if (enabled) {
-            this.modifiers.push((obj, key) => {
-                obj[key] = (obj[key] as string).trim();
-            });
+            this.modifiers.push(value => value.trim());
         } else {
             this.constraints |= Constraints.TRIM;
         }
@@ -495,25 +487,25 @@ export class ValidatorObject {
         return object;
     }
 
-    valid(obj: object): boolean {
+    valid(obj: { [key: string]: any }): boolean {
         const schemaProperties = Object.keys(this.innerObject).length;
         let index = schemaProperties;
 
-        for (const [key, value] of Object.entries(obj)) {
+        for (let [key, value] of Object.entries(obj)) {
             const schemaValue = this.innerObject[key];
 
             if (!(schemaValue[VALIDATOR] > 0)) {
                 return false;
             }
 
+            if (schemaValue instanceof ValidatorPrimitive) {
+                obj[key] = value = schemaValue.applyModifications(value);
+            }
+
             try {
                 schemaValue.valid(value);
             } catch (e) {
                 throw ValidatorError.throw(e, key);
-            }
-
-            if (schemaValue instanceof ValidatorPrimitive) {
-                schemaValue.applyModifications(obj, key);
             }
 
             index -= 1;

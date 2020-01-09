@@ -4,7 +4,11 @@ const schema = Validator.object().keys({
     a: Validator.object().keys({
         b: Validator.object().keys({
             c: Validator.object().keys({
-                d: Validator.string(),
+                d: Validator.string()
+                    .min(27)
+                    .max(28)
+                    .trim()
+                    .lowercase(),
             }),
         }),
     }),
@@ -36,4 +40,4 @@ const values = {
     },
 };
 
-console.log(Validator.validate(schema, values));
+console.log(Validator.validate(schema, values), values.a.b.c.d);
