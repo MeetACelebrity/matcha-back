@@ -1,7 +1,9 @@
 version: '3.4'
 services:
     database:
-        build: .
+        build:
+            context: .
+            dockerfile: Dockerfile-db
         ports:
             - '${DATABASE_PORT}:5432'
         restart: on-failure
@@ -41,3 +43,10 @@ services:
                 /usr/bin/mc cp /tmp/7.jpg cloud/profile-pics;
                 exit 0;
             '
+    api:
+        build:
+            context: .
+            dockerfile: Dockerfile-api
+        ports:
+            - '8080:8080'
+        restart: on-failure
