@@ -29,7 +29,7 @@ const signUpSchema: ValidatorObject = Validator.object().keys({
     username: stringSchema,
     givenName: stringSchema,
     familyName: stringSchema,
-    password: Validator.string().min(6),
+    password: Validator.string().password(),
     acceptGeolocation: Validator.boolean(),
 });
 

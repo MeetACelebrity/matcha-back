@@ -280,24 +280,26 @@ export async function score({
         UPDATE
             users
         SET
-            score = score + (SELECT score FROM users WHERE uuid = $1) * $3
+            score = score + CEIL(
+                (SELECT score FROM users WHERE uuid = $1)::NUMERIC * $3
+            )::INTEGER
         WHERE
             users.uuid = $2
-        `;
+    `;
 
-    const multiplicator = new Map([
-        ['GOT_LIKE', '10'],
-        ['GOT_VISIT', '5'],
-        ['GOT_UNLIKE', '-10'],
-        ['GOT_REPORT', '-15'],
-        ['GOT_BLOCK', '-20'],
+    const MULTIPLICATORS = new Map([
+        ['GOT_LIKE', 0.05],
+        ['GOT_VISIT', 0.01],
+        ['GOT_UNLIKE', -0.025],
+        ['GOT_REPORT', -0.25],
+        ['GOT_BLOCK', -0.4],
     ]);
 
     try {
         const { rowCount } = await db.query(query, [
             actorUuid,
             destUuid,
-            Number(multiplicator.get(type)),
+            MULTIPLICATORS.get(type),
         ]);
         if (rowCount === 0) return null;
         return true;

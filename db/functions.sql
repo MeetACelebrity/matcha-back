@@ -117,8 +117,8 @@ CREATE OR REPLACE FUNCTION insert_picture(uuid1 uuid, new_pics text, uuid2 uuid)
             user_id=id_user.id
         AND
             image_nb != 0;
-        IF number_img > 4 THEN
-            RETURN QUERY SELECT '', '', '', 'TOO_MANY_PICS';
+        IF number_img >= 4 THEN
+            RETURN QUERY SELECT '', '', -1, 'TOO_MANY_PICS';
         END IF;
 
     -- Insert image in images tables

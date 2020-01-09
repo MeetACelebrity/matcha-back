@@ -38,7 +38,7 @@ export interface ChatMessage {
 
 export interface ConvsFormat {
     uuid: string;
-    users: { uuid: string; username: string }[];
+    users: { uuid: string; username: string; profilePic: string }[];
     messages: ChatMessage[];
 }
 
@@ -79,7 +79,43 @@ export async function createConv({
         SELECT
             create_conv($1, $2, $3),
             (SELECT username FROM users WHERE uuid = $1) as "username1",
-            (SELECT username FROM users WHERE uuid = $2) as "username2"
+            (SELECT username FROM users WHERE uuid = $2) as "username2",
+            (
+                SELECT
+                    images.src
+                FROM
+                    users
+                INNER JOIN
+                    profile_pictures
+                ON
+                    users.id = profile_pictures.user_id
+                INNER JOIN
+                    images
+                ON
+                    profile_pictures.image_id = images.id
+                WHERE
+                    users.uuid = $1
+                        AND
+                    profile_pictures.image_nb = 0
+            ) as "profilePic1",
+            (
+                SELECT
+                    images.src
+                FROM
+                    users
+                INNER JOIN
+                    profile_pictures
+                ON
+                    users.id = profile_pictures.user_id
+                INNER JOIN
+                    images
+                ON
+                    profile_pictures.image_id = images.id
+                WHERE
+                    users.uuid = $2
+                        AND
+                    profile_pictures.image_nb = 0
+            ) as "profilePic2"
     `;
 
     try {
@@ -103,8 +139,16 @@ export async function createConv({
             payload: {
                 uuid: conversationUuid,
                 users: [
-                    { uuid: uuid1, username: result.username1 },
-                    { uuid: uuid2, username: result.username2 },
+                    {
+                        uuid: uuid1,
+                        username: result.username1,
+                        profilePic: srcToPath(result.profilePic1),
+                    },
+                    {
+                        uuid: uuid2,
+                        username: result.username2,
+                        profilePic: srcToPath(result.profilePic2),
+                    },
                 ],
                 messages: [],
             },

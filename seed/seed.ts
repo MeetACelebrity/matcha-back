@@ -69,7 +69,10 @@ class User {
         this.familyName = faker.name.lastName();
         this.email = faker.internet.email();
         this.password = faker.internet.password(); // hash it
-        this.score = faker.random.number();
+        this.score = faker.random.number({
+            min: 100,
+            max: 1000,
+        });
         this.location = faker.random.boolean();
         this.roamming = roamingChoices[faker.random.number({ min: 0, max: 2 })];
 
@@ -203,7 +206,7 @@ class User {
 }
 
 async function generateSeedFile(db: Database) {
-    const USERS_COUNT = 100;
+    const USERS_COUNT = 500;
 
     const queries: { text: string; values: any[] }[] = [];
 
@@ -321,6 +324,8 @@ async function insertSeedIntoDatabase(db: Database) {
     } finally {
         client.release();
     }
+
+    await db.end();
 }
 
 (async () => {
@@ -328,6 +333,5 @@ async function insertSeedIntoDatabase(db: Database) {
 
     await generateSeedFile(db);
 
-    // Function to call
-    await insertSeedIntoDatabase(db);
+    // await insertSeedIntoDatabase(db);
 })().catch(console.error);
