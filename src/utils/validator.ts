@@ -371,7 +371,7 @@ export class ValidatorString extends ValidatorPrimitive<string> {
             !(
                 value.length >= 6 &&
                 /\d+/.test(value) &&
-                /[\s!"#\$%&'\(\)\*\+\,\-\.\/:;<=>\?@\[\\\]\^_`\{\|\}\~]+/.test(
+                /[\s!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]+/.test(
                     value
                 )
             )
