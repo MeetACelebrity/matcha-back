@@ -20,10 +20,12 @@ const enum Constraints {
     TRIM = 1 << 5,
 
     EMAIL = 1 << 6,
+    PASSWORD = 1 << 7,
+    UUID = 1 << 8,
 
-    INTEGER = 1 << 7,
-    NEGATIVE = 1 << 8,
-    POSITIVE = 1 << 9,
+    INTEGER = 1 << 9,
+    NEGATIVE = 1 << 10,
+    POSITIVE = 1 << 11,
 }
 
 export enum InvalidValueErrors {
@@ -45,6 +47,8 @@ export enum InvalidValueErrors {
     NOT_UPPERCASE = 'NOT_UPPERCASE',
     NOT_LOWERCASE = 'NOT_LOWERCASE',
     NOT_TRIM = 'NOT_TRIM',
+    NOT_VALID_PASSWORD = 'NOT_VALID_PASSWORD',
+    NOT_VALID_UUID = 'NOT_VALID_UUID',
 
     NOT_AN_INTEGER = 'NOT_AN_INTEGER',
     NOT_A_NEGATIVE_NUMBER = 'NOT_A_NEGATIVE_NUMBER',
@@ -299,6 +303,18 @@ export class ValidatorString extends ValidatorPrimitive<string> {
         return this;
     }
 
+    password(): this {
+        this.constraints |= Constraints.PASSWORD;
+
+        return this;
+    }
+
+    uuid(): this {
+        this.constraints |= Constraints.UUID;
+
+        return this;
+    }
+
     valid(value: string): boolean {
         if (!super.valid(value)) return false;
 
@@ -348,6 +364,26 @@ export class ValidatorString extends ValidatorPrimitive<string> {
             value !== value.trim()
         ) {
             throw new ValidatorError(InvalidValueErrors.NOT_TRIM);
+        }
+
+        if (
+            (this.constraints & Constraints.PASSWORD) !== 0 &&
+            !(
+                value.length >= 6 &&
+                /\d+/.test(value) &&
+                /[\s!"#\$%&'\(\)\*\+\,\-\.\/:;<=>\?@\[\\\]\^_`\{\|\}\~]+/.test(
+                    value
+                )
+            )
+        ) {
+            throw new ValidatorError(InvalidValueErrors.NOT_VALID_PASSWORD);
+        }
+
+        if (
+            (this.constraints & Constraints.UUID) !== 0 &&
+            !(value.length === 36)
+        ) {
+            throw new ValidatorError(InvalidValueErrors.NOT_VALID_UUID);
         }
 
         return true;

@@ -10,13 +10,48 @@ import {
     getUserByUuid,
 } from '../../models/user';
 import { Context } from '../../app';
+import { Validator } from '../../utils/validator';
 
 const enum ResetPasswordStatusCode {
     DONE = 'DONE',
     UNCONFIRM_ACCOUNT = 'UNCONFIRM_ACCOUNT',
     UNKNOWN_EMAIL = 'UNKNOWN_EMAIL',
     UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+    INCORRECT_PASSWORD = 'INCORRECT_PASSWORD',
     LINK_INCORRECT = 'LINK_INCORRECT',
+}
+
+const passwordChangingSchema = Validator.object().keys({
+    uuid: Validator.string().uuid(),
+    token: Validator.string().uuid(),
+    password: Validator.string().password(),
+});
+
+function passwordChangingRouteValidation(
+    req: express.Request
+): ResetPasswordStatusCode {
+    const validationResult = Validator.validate(
+        passwordChangingSchema,
+        req.body
+    );
+
+    if (typeof validationResult !== 'boolean') {
+        const {
+            error: { concernedKey },
+        } = validationResult;
+
+        switch (concernedKey) {
+            case 'uuid':
+            case 'token':
+                return ResetPasswordStatusCode.LINK_INCORRECT;
+            case 'password':
+                return ResetPasswordStatusCode.INCORRECT_PASSWORD;
+            default:
+                return ResetPasswordStatusCode.UNKNOWN_ERROR;
+        }
+    }
+
+    return ResetPasswordStatusCode.DONE;
 }
 
 export default function setupResetPassword(router: express.Router) {
@@ -89,6 +124,13 @@ export default function setupResetPassword(router: express.Router) {
 
     router.post('/reset-password/changing/', async (req, res) => {
         try {
+            const statusCode = passwordChangingRouteValidation(req.body);
+            if (statusCode !== ResetPasswordStatusCode.DONE) {
+                res.status(400);
+                res.json({ statusCode });
+                return;
+            }
+
             const user = await resetingPassword({
                 db: res.locals.db,
                 uuid: req.body.uuid,

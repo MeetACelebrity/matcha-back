@@ -22,7 +22,7 @@ const signInSchema: ValidatorObject = Validator.object().keys({
     username: Validator.string()
         .min(3)
         .max(20),
-    password: Validator.string().min(6),
+    password: Validator.string().password(),
 });
 
 function signUpRouteValidation(req: express.Request): SignInStatusCode {

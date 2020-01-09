@@ -74,8 +74,8 @@ function generalRouteValidation(req: express.Request): UpdateUserStatusCode {
 
 // /password
 const passwordSchema: ValidatorObject = Validator.object().keys({
-    currentPassword: Validator.string().min(6),
-    newPassword: Validator.string().min(6),
+    currentPassword: Validator.string().password(),
+    newPassword: Validator.string().password(),
 });
 function passwordRouteValidation(req: express.Request): UpdateUserStatusCode {
     const validationResult = Validator.validate(passwordSchema, req.body);
