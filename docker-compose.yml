@@ -7,6 +7,9 @@ services:
         ports:
             - '${DATABASE_PORT}:5432'
         restart: on-failure
+        volumes:
+            - ./db/postgres.conf:/etc/postgresql.conf
+        command: 'postgres -c config_file="/etc/postgresql.conf"'
 
     cloud:
         image: minio/minio
