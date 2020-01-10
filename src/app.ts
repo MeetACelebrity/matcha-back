@@ -17,7 +17,7 @@ import {
     getUserByUuid,
     getUsernameByUserUuid,
 } from './models/user';
-import { WS, InMessageType, OutMessageType } from './ws';
+import { WS, InMessageType, OutMessageType, OutMessageNewMessage } from './ws';
 import {
     getConvs,
     createMessage,
@@ -101,17 +101,25 @@ async function app() {
 
                     if (message === null) break;
 
+                    const data: OutMessageNewMessage = {
+                        type: OutMessageType.NEW_MESSAGE,
+                        payload: {
+                            conversationId: body.payload.conversationId,
+                            ...message,
+                        },
+                    };
+
                     // Send the message to all users who have subscribed to this room
                     ws.broadcastToRoomExclusively(
                         body.payload.conversationId,
-                        {
-                            type: OutMessageType.NEW_MESSAGE,
-                            payload: {
-                                conversationId: body.payload.conversationId,
-                                ...message,
-                            },
-                        },
+                        data,
                         [userUuid]
+                    );
+                    ws.broadcastToUserExceptConnection(
+                        userUuid,
+                        body.payload.conversationId,
+                        connection,
+                        data
                     );
 
                     const authorUsername = await getUsernameByUserUuid({

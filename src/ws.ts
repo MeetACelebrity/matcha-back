@@ -318,4 +318,23 @@ export class WS extends server {
     getMembersOfRoom(roomId: string) {
         return this.rooms.get(roomId);
     }
+
+    broadcastToUserExceptConnection(
+        userId: string,
+        roomId: string,
+        connection: connection,
+        data: OutMessage
+    ) {
+        const members = this.rooms.get(roomId);
+        if (members === undefined || !members.includes(userId)) return;
+
+        const connections = this.activeConnections.get(userId);
+        if (connections === undefined) return;
+
+        for (const { connection: conn } of connections) {
+            if (conn === connection) continue;
+
+            conn.send(JSON.stringify(data), err => err && console.error(err));
+        }
+    }
 }
