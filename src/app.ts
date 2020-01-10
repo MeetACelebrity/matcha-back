@@ -149,7 +149,18 @@ async function app() {
                     return;
             }
         },
-        async ({ userUuid }) => {
+        async ({ userUuid, connection }) => {
+            const userConnections = ws.getUserConnections(userUuid);
+            // If the user is connected with another connection, don't log it as disconnected
+            if (
+                userConnections === undefined ||
+                userConnections.some(
+                    ({ connection: conn }) => conn !== connection
+                )
+            ) {
+                return;
+            }
+
             await onlineUser({
                 db,
                 uuid: userUuid,

@@ -319,6 +319,10 @@ export class WS extends server {
         return this.rooms.get(roomId);
     }
 
+    getUserConnections(userId: string): OpenConnexion[] | undefined {
+        return this.activeConnections.get(userId);
+    }
+
     broadcastToUserExceptConnection(
         userId: string,
         roomId: string,
