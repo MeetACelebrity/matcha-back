@@ -1,8 +1,9 @@
-import { server, request, IMessage, connection, IStringified } from 'websocket';
+import { server, request, IMessage, connection } from 'websocket';
 import { Server } from 'http';
 
 import { Validator } from './utils/validator';
 import { ConvsFormat, NotificationType } from './models/chat';
+import { FRONT_ENDPOINT } from './constants';
 
 interface OpenConnexion {
     connection: connection;
@@ -109,7 +110,7 @@ const schema = Validator.alternatives([
 ]);
 
 export class WS extends server {
-    private static ALLOWED_ORIGINS = ['http://localhost:3000'];
+    private static ALLOWED_ORIGINS = [FRONT_ENDPOINT];
     private sessionsStore: any;
     private activeConnections: Map<string, OpenConnexion[]> = new Map();
     private rooms: Map<string, string[]> = new Map();
