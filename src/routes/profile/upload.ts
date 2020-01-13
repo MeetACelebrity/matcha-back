@@ -72,7 +72,7 @@ export default function setupUpload(router: express.Router) {
             }
 
             const fType = fileType(req.files.profile.data);
-            const authorizeType = ['png', 'jpeg', 'gif'];
+            const authorizeType = ['png', 'jpg', 'gif'];
 
             if (fType === undefined || !authorizeType.includes(fType.ext)) {
                 res.json({ statusCode: UploadPicsStatusCode.FORBIDDEN_FILE });
