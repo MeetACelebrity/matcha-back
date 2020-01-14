@@ -104,8 +104,6 @@ export default function setupResetPassword(router: express.Router) {
                 })
             );
 
-            console.log('generated html =', html);
-
             await email.sendMail({
                 html,
                 subject: 'Meet a Celebrity - Password Reset',
@@ -124,7 +122,7 @@ export default function setupResetPassword(router: express.Router) {
 
     router.post('/reset-password/changing/', async (req, res) => {
         try {
-            const statusCode = passwordChangingRouteValidation(req.body);
+            const statusCode = passwordChangingRouteValidation(req);
             if (statusCode !== ResetPasswordStatusCode.DONE) {
                 res.status(400);
                 res.json({ statusCode });
