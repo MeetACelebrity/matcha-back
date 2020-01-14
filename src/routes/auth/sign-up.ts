@@ -92,19 +92,23 @@ export default function signUpMiddleware(router: express.Router) {
 
             const validationUrl = `${API_ENDPOINT}/auth/confirmation/${result.uuid}/${result.token}`;
 
-            const { html } = await heml(
-                template({
-                    username: req.body.username,
-                    signup_url: validationUrl,
-                })
-            );
+            Promise.resolve()
+                .then(async () => {
+                    const { html } = await heml(
+                        template({
+                            username: req.body.username,
+                            signup_url: validationUrl,
+                        })
+                    );
 
-            await email.sendMail({
-                html,
-                subject: 'Welcome to Meet a Celebrity',
-                text: validationUrl,
-                to: req.body.email,
-            });
+                    await email.sendMail({
+                        html,
+                        subject: 'Welcome to Meet a Celebrity',
+                        text: validationUrl,
+                        to: req.body.email,
+                    });
+                })
+                .catch(() => {});
 
             res.json({
                 statusCode: SignUpStatusCode.DONE,

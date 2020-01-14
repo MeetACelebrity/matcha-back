@@ -98,18 +98,22 @@ export default function setupResetPassword(router: express.Router) {
 
             const link = `${FRONT_ENDPOINT}/reset-password/password/${user.uuid}/${result}`;
 
-            const { html } = await heml(
-                template({
-                    reset_password_link: link,
-                })
-            );
+            Promise.resolve()
+                .then(async () => {
+                    const { html } = await heml(
+                        template({
+                            reset_password_link: link,
+                        })
+                    );
 
-            await email.sendMail({
-                html,
-                subject: 'Meet a Celebrity - Password Reset',
-                text: link,
-                to: userEmail,
-            });
+                    await email.sendMail({
+                        html,
+                        subject: 'Meet a Celebrity - Password Reset',
+                        text: link,
+                        to: userEmail,
+                    });
+                })
+                .catch(() => {});
 
             res.status(200);
             res.json({ statusCode: ResetPasswordStatusCode.DONE });
