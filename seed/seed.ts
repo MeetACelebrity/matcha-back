@@ -2,6 +2,7 @@ import uuid from 'uuid/v4';
 import faker from 'faker';
 import { subWeeks } from 'date-fns';
 import { promises as fs } from 'fs';
+import { hash } from 'argon2';
 
 import { Database } from '../src/database';
 import {
@@ -68,7 +69,7 @@ class User {
         this.givenName = faker.name.firstName();
         this.familyName = faker.name.lastName();
         this.email = faker.internet.email();
-        this.password = faker.internet.password(); // hash it
+        this.password = faker.internet.password();
         this.score = faker.random.number({
             min: 100,
             max: 1000,
@@ -121,7 +122,7 @@ class User {
             ];
 
         this.pics =
-            this.gender === 1
+            this.gender === ('MALE' as any)
                 ? `${faker.random.number({ min: 1, max: 4 })}.jpg`
                 : `${faker.random.number({ min: 5, max: 7 })}.jpg`;
 
@@ -159,7 +160,7 @@ class User {
         return this.pics;
     }
 
-    toPGSQL() {
+    async toPGSQL() {
         return {
             text: `
                 INSERT INTO users(
@@ -195,7 +196,7 @@ class User {
                 this.givenName,
                 this.familyName,
                 this.email,
-                this.password,
+                await hash(this.password),
                 this.score,
                 this.location,
                 this.roamming,
@@ -214,7 +215,7 @@ async function generateSeedFile(db: Database) {
         const user = new User();
 
         // insert user
-        queries.push(user.toPGSQL());
+        queries.push(await user.toPGSQL());
 
         // insert addresses --> primary and current
 
