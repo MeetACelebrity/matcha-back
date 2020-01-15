@@ -63,6 +63,10 @@ export default function publicUser(router: express.Router) {
                 uuid: req.params.uuid,
                 meUuid: user.uuid,
             });
+            if (searchUser === null) {
+                res.sendStatus(404);
+                return;
+            }
 
             const seeUser = await userSee({
                 db: res.locals.db,
@@ -71,12 +75,11 @@ export default function publicUser(router: express.Router) {
                 userInUsername: user.username,
                 uuidOut: req.params.uuid,
             });
-
-            console.log('see user', seeUser);
-            if (searchUser === null || seeUser === null) {
+            if (seeUser === null) {
                 res.sendStatus(404);
                 return;
             }
+
             res.json({
                 ...internalUserToPublicUser(searchUser),
                 isLiker: seeUser.liker ? true : false,
