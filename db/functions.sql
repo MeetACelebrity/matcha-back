@@ -1334,6 +1334,8 @@ CREATE OR REPLACE FUNCTION search("me_uuid" uuid, "me_data" text, "lat" float, "
         WHERE
             users.id != $2
         AND
+            is_blocked($2, users.id) = TRUE
+        AND
             users.confirmed = TRUE
         AND
         (
