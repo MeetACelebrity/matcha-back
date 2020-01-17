@@ -325,7 +325,7 @@ async function insertSeedIntoDatabase(db: Database) {
 (async () => {
     const db = new Database();
 
-    await generateSeedFile(db);
+    // await generateSeedFile(db);
 
-    // await insertSeedIntoDatabase(db);
+    await insertSeedIntoDatabase(db);
 })().catch(console.error);
