@@ -1222,9 +1222,9 @@ CREATE OR REPLACE FUNCTION has_same_tags("tags_array" text ARRAY[5], "user_id" i
         tag     TEXT;
     BEGIN
         -- If the `tags_array` parameter is empty, return false
-        IF CARDINALITY(tags_array) = 0 THEN
-            RETURN FALSE;
-        END IF;
+        -- IF CARDINALITY(tags_array) = 0 THEN
+        --     RETURN FALSE;
+        -- END IF;
 
         FOREACH tag IN ARRAY tags_array LOOP
             PERFORM
