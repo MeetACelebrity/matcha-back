@@ -1,6 +1,7 @@
 version: '3.3'
 services:
     database:
+        container_name: database
         build:
             context: .
             dockerfile: Dockerfile-db
@@ -12,6 +13,7 @@ services:
         command: 'postgres -c config_file="/etc/postgresql.conf"'
 
     cloud:
+        container_name: cloud
         image: minio/minio
         ports:
             - '${CLOUD_PORT}:9000'
@@ -20,6 +22,7 @@ services:
         command: server /data
 
     setupCloud:
+        container_name: setupCloud
         image: minio/mc
         volumes:
             - ./seed/images:/tmp
@@ -47,6 +50,7 @@ services:
                 exit 0;
             '
     api:
+        container_name: api
         build:
             context: .
             dockerfile: Dockerfile-api
